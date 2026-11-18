@@ -41,13 +41,18 @@ button.danger:hover{background:#3d191b}
 
 .org-switcher{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px}
 
-/* レイアウト：上から 組織選択 → ツールバー → 編集パネル → 組織図 */
+/* レイアウト */
 .layout{display:flex;flex-direction:column;gap:10px}
 
 /* 編集パネル */
 label{display:block;font-size:11px;color:var(--gold);margin:8px 0 4px;font-weight:bold}
 input{width:100%;padding:9px;border:1px solid var(--border);background:#0f1117;color:var(--text);border-radius:6px;font-size:14px}
 input:focus{outline:none;border-color:var(--gold)}
+
+/* カラー選択ボタン */
+.color-picker{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.color-btn{width:32px;height:32px;border-radius:50%;border:2px solid transparent;padding:0;cursor:pointer;transition:transform 0.1s}
+.color-btn.active{border-color:#fff;transform:scale(1.15);box-shadow:0 0 8px rgba(255,255,255,0.6)}
 
 /* キャンバス（通常表示エリア） */
 .canvas-wrap{position:relative}
@@ -71,8 +76,15 @@ input:focus{outline:none;border-color:var(--gold)}
 .node.root-node{border:2px solid var(--gold);background:linear-gradient(180deg,#221e15 100%,#15130e 0%);padding-top:14px}
 .node.root-node::before{content:"◆ 本家 ◆";display:block;font-size:9px;color:var(--gold);letter-spacing:0.15em;margin-bottom:3px}
 
-.node .role-badge{display:inline-block;font-size:10px;color:#fff;background:var(--crimson);padding:2px 6px;border-radius:3px;margin-bottom:4px;letter-spacing:0.05em;font-weight:bold}
-.node.root-node .role-badge{background:var(--gold);color:#0f1117}
+/* 役職バッジ */
+.role-badge{display:inline-block;font-size:10px;color:#fff;padding:2px 6px;border-radius:3px;margin-bottom:4px;letter-spacing:0.05em;font-weight:bold}
+.badge-gold{background:#d4af37;color:#0f1117;}
+.badge-crimson{background:#c0392b;color:#fff;}
+.badge-purple{background:#8e44ad;color:#fff;}
+.badge-blue{background:#2980b9;color:#fff;}
+.badge-green{background:#27ae60;color:#fff;}
+.badge-gray{background:#4b6584;color:#fff;}
+
 .node strong{display:block;font-size:14px;letter-spacing:0.05em;color:#fff;word-break:break-all}
 .node small{display:block;color:var(--muted);margin-top:4px;font-size:11px;border-top:1px dashed var(--border);padding-top:4px;word-break:break-all}
 
@@ -129,8 +141,18 @@ input:focus{outline:none;border-color:var(--gold)}
     <h3 style="margin:0 0 6px 0;font-size:14px;color:var(--gold)">構成員の編集</h3>
     <div style="font-size:12px;color:var(--muted);background:#0f1117;padding:6px 8px;border-radius:4px;border:1px solid var(--border)" id="selectedLabel">選択：なし</div>
 
-    <label for="nodeRole">役職・盃（例：若頭）</label>
+    <label for="nodeRole">役職・盃（例：若頭、本部長など）</label>
     <input id="nodeRole" maxlength="50" placeholder="若頭">
+
+    <label>役職バッジの色</label>
+    <div class="color-picker" id="colorPicker">
+      <button type="button" class="color-btn" data-color="gold" style="background:#d4af37" title="金"></button>
+      <button type="button" class="color-btn" data-color="crimson" style="background:#c0392b" title="赤"></button>
+      <button type="button" class="color-btn" data-color="purple" style="background:#8e44ad" title="紫"></button>
+      <button type="button" class="color-btn" data-color="blue" style="background:#2980b9" title="青"></button>
+      <button type="button" class="color-btn" data-color="green" style="background:#27ae60" title="緑"></button>
+      <button type="button" class="color-btn" data-color="gray" style="background:#4b6584" title="灰"></button>
+    </div>
 
     <label for="nodeName">氏名・団体名</label>
     <input id="nodeName" maxlength="50" placeholder="氏名または組織名">
@@ -142,7 +164,7 @@ input:focus{outline:none;border-color:var(--gold)}
     <div class="status" id="status"></div>
   </aside>
 
-  <!-- 組織図（編集パネルの下） -->
+  <!-- 組織図 -->
   <div class="canvas-wrap">
     <div class="canvas-header">
       <span id="count">総勢 1名</span>
@@ -157,7 +179,7 @@ input:focus{outline:none;border-color:var(--gold)}
       <div class="tree" id="tree"></div>
     </div>
     <div class="meta-info">
-      <span style="font-size:10px;color:var(--muted)">※余白をタップするか「全画面で見る」で大きく表示できます</span>
+      <span style="font-size:10px;color:var(--muted)">※カードをタップして編集・色変更ができます</span>
     </div>
   </div>
 </div>
@@ -183,8 +205,8 @@ input:focus{outline:none;border-color:var(--gold)}
 (()=>{
 const $=id=>document.getElementById(id);
 
-const STORAGE_KEY_LIST="yakuza_org_list_v3";
-const STORAGE_PREFIX="yakuza_org_data_v3";
+const STORAGE_KEY_LIST="yakuza_org_list_v5";
+const STORAGE_PREFIX="yakuza_org_data_v5";
 
 const defaultOrgId="org_default_1";
 const defaultOrgName="二代目黒鉄組（サンプル）";
@@ -193,16 +215,17 @@ const defaultRoot={
   name:"黒鉄 厳蔵",
   role:"二代目黒鉄組 組長",
   dept:"総本部（神室町）",
+  badgeColor:"gold",
   children:[
     {
-      id:2,name:"陣内 宗介",role:"若頭 / 陣内組",dept:"執行部・港湾利権",
+      id:2,name:"陣内 宗介",role:"若頭 / 陣内組",dept:"執行部・港湾利権",badgeColor:"crimson",
       children:[
-        {id:5,name:"冴島 剛",role:"若頭補佐",dept:"武闘派",children:[]},
-        {id:6,name:"氷室 怜司",role:"若頭補佐",dept:"金融・フロント",children:[]}
+        {id:5,name:"冴島 剛",role:"若頭補佐",dept:"武闘派",badgeColor:"blue",children:[]},
+        {id:6,name:"氷室 怜司",role:"若頭補佐",dept:"金融・フロント",badgeColor:"blue",children:[]}
       ]
     },
     {
-      id:3,name:"九条 勝",role:"舎弟頭",dept:"渉外担当",
+      id:3,name:"九条 勝",role:"舎弟頭",dept:"渉外担当",badgeColor:"purple",
       children:[]
     }
   ]
@@ -212,6 +235,7 @@ let orgList = [];
 let currentOrgId = defaultOrgId;
 let root = JSON.parse(JSON.stringify(defaultRoot));
 let selected = 1;
+let selectedColor = "gold";
 let nextId = 7;
 let zoom = 1;
 let modalZoom = 1;
@@ -225,7 +249,7 @@ function initStorage(){
   if(!orgList.length){
     orgList = [{ id: defaultOrgId, name: defaultOrgName }];
     localStorage.setItem(STORAGE_KEY_LIST, JSON.stringify(orgList));
-    localStorage.setItem(STORAGE_PREFIX + defaultOrgId, JSON.stringify(defaultRoot));
+    localStorage.setItem(STORAGE_PREFIX + defaultOrgId, JSON.stringify({root: defaultRoot, nextId: 7}));
   }
   currentOrgId = orgList[0].id;
   loadOrgData(currentOrgId);
@@ -245,14 +269,14 @@ function loadOrgData(id){
   if(raw){
     try{
       const data = JSON.parse(raw);
-      root = data.root;
+      root = data.root || data;
       nextId = data.nextId || (Math.max(...flatten(root).map(n=>n.id))+1);
     }catch(e){
       root = JSON.parse(JSON.stringify(defaultRoot));
       nextId = 7;
     }
   }else{
-    root = { id:1, name:"新・組長", role:"組長", dept:"本家", children:[] };
+    root = { id:1, name:"新・組長", role:"組長", dept:"本家", badgeColor:"gold", children:[] };
     nextId = 2;
   }
   selected = root.id;
@@ -288,7 +312,7 @@ $("newOrg").onclick = () => {
   orgList.push({ id: newId, name: name.trim() });
   saveOrgList();
 
-  root = { id: 1, name: "初代 " + name.trim(), role: "組長", dept:"本家", children: [] };
+  root = { id: 1, name: "初代 " + name.trim(), role: "組長", dept:"本家", badgeColor:"gold", children: [] };
   nextId = 2;
   selected = 1;
 
@@ -351,12 +375,27 @@ function status(s){
   $("status").textContent=s;
 }
 
+function updateColorPickerUI(color){
+  selectedColor = color;
+  document.querySelectorAll(".color-btn").forEach(btn=>{
+    btn.classList.toggle("active", btn.dataset.color === color);
+  });
+}
+
+document.querySelectorAll(".color-btn").forEach(btn=>{
+  btn.onclick = () => {
+    updateColorPickerUI(btn.dataset.color);
+  };
+});
+
 function sync(){
   const n=find(root,selected)||root;
   selected=n.id;
   $("nodeName").value=n.name;
   $("nodeRole").value=n.role;
   $("nodeDept").value=n.dept;
+  const defaultCol = n.id === root.id ? "gold" : "crimson";
+  updateColorPickerUI(n.badgeColor || defaultCol);
   $("selectedLabel").textContent="選択："+n.name+"（"+(n.role||"役職なし")+"）";
   $("delete").disabled=n.id===root.id;
 }
@@ -371,7 +410,8 @@ function render(n, isRoot=false){
 
   if(n.role){
     const role=document.createElement("div");
-    role.className="role-badge";
+    const col = n.badgeColor || (isRoot ? "gold" : "crimson");
+    role.className="role-badge badge-" + col;
     role.textContent=n.role;
     card.append(role);
   }
@@ -425,17 +465,14 @@ function draw(){
   saveCurrentOrgData();
 }
 
-// 通常画面のズーム操作
 $("zoomIn").onclick=()=>{ zoom=Math.min(1.8, +(zoom+.1).toFixed(1)); applyZoom(); };
 $("zoomOut").onclick=()=>{ zoom=Math.max(.4, +(zoom-.1).toFixed(1)); applyZoom(); };
 $("zoomReset").onclick=()=>{ zoom=1; applyZoom(); };
 
-// 全画面モーダルのズーム操作
 $("modalZoomIn").onclick=()=>{ modalZoom=Math.min(2.0, +(modalZoom+.15).toFixed(2)); applyZoom(); };
 $("modalZoomOut").onclick=()=>{ modalZoom=Math.max(.3, +(modalZoom-.15).toFixed(2)); applyZoom(); };
 $("modalZoomReset").onclick=()=>{ modalZoom=1; applyZoom(); };
 
-// フルスクリーン開閉
 $("expandModal").onclick = () => { $("modalOverlay").classList.add("active"); };
 $("closeModal").onclick = () => { $("modalOverlay").classList.remove("active"); };
 $("mainCanvas").onclick = (e) => {
@@ -458,6 +495,7 @@ function add(sibling){
     name:"新構成員",
     role:"若衆",
     dept:"担当・シノギ",
+    badgeColor:"gray",
     children:[]
   };
 
@@ -478,6 +516,7 @@ $("apply").onclick=()=>{
   n.name=$("nodeName").value.trim()||"名称未設定";
   n.role=$("nodeRole").value.trim();
   n.dept=$("nodeDept").value.trim();
+  n.badgeColor=selectedColor;
   sync();
   draw();
   status("保存しました");
