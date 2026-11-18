@@ -172,7 +172,7 @@
     border: 1px solid #2e3344;
     border-radius: 8px;
   }
-  /* ボトムシート（編集パネル） */
+  /* ボトムシート */
   .bottom-sheet {
     position: fixed;
     left: 0;
@@ -205,7 +205,6 @@
     opacity: 1;
     pointer-events: auto;
   }
-  /* カラーピッカー */
   .color-btn {
     width: 36px;
     height: 36px;
@@ -218,7 +217,6 @@
     transform: scale(1.15);
     box-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
   }
-  /* カスタムダイアログ */
   .dialog-overlay {
     position: fixed;
     inset: 0;
@@ -252,7 +250,7 @@
     </div>
   </header>
 
-  <!-- 階層ナビゲーションバー（組の内部表示時に出現） -->
+  <!-- 階層ナビゲーションバー -->
   <div id="parentNavBar" class="hidden bg-gradient-to-r from-[#261f12] to-[#171a26] border-b border-[#d4af37]/40 px-3 py-2 flex items-center justify-between gap-2 shrink-0 z-10">
     <button id="btnBackToParent" class="bg-[#d4af37] text-[#0b0c10] font-bold text-xs px-3 py-1.5 rounded-lg flex items-center gap-1 shadow active:scale-95 transition">
       <span>◀</span>
@@ -261,11 +259,11 @@
     <span id="tierDepthBadge" class="text-[11px] text-[#f3d27a] font-bold truncate">組内部・傘下組織モード</span>
   </div>
 
-  <!-- サブステータスバー（総勢・ズーム・保存状態） -->
+  <!-- ステータスバー -->
   <div class="bg-[#0e1017] border-b border-[#222634] px-3 py-1.5 flex items-center justify-between text-xs shrink-0 z-10">
     <div class="flex items-center gap-2">
       <span id="countBadge" class="text-[#d4af37] font-bold">表示中 1名</span>
-      <span id="saveIndicator" class="text-[11px] text-gray-400">準備完了</span>
+      <span id="saveIndicator" class="text-[11px] text-emerald-400">セーブ有効</span>
     </div>
     <div class="flex items-center gap-1">
       <button id="zoomOut" class="bg-[#1a1d28] border border-[#2c3140] text-gray-300 w-7 h-7 rounded-md flex items-center justify-center font-bold">−</button>
@@ -274,12 +272,12 @@
     </div>
   </div>
 
-  <!-- メインキャンバス -->
+  <!-- キャンバス -->
   <main class="canvas-area" id="mainCanvas">
     <div class="tree" id="tree"></div>
   </main>
 
-  <!-- 下部固定アクションバー -->
+  <!-- アクションバー -->
   <footer class="fixed bottom-3 left-3 right-3 bg-[#161924]/95 backdrop-blur-md border border-[#33394d] rounded-2xl p-2 shadow-2xl z-30 flex items-center justify-between gap-1.5">
     <button id="btnOpenEdit" class="flex-1 bg-[#252a3b] active:bg-[#32394f] text-white border border-[#3f465e] py-2.5 px-2 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-0.5">
       <span class="text-sm">✏️</span>
@@ -299,10 +297,10 @@
     </button>
   </footer>
 
-  <!-- ボトムシート背景 -->
+  <!-- シート背景 -->
   <div id="sheetBackdrop" class="sheet-backdrop"></div>
 
-  <!-- 構成員編集ボトムシート -->
+  <!-- 編集シート -->
   <section id="editSheet" class="bottom-sheet">
     <div class="px-4 py-3 border-b border-[#282d3d] flex items-center justify-between">
       <div>
@@ -313,7 +311,6 @@
     </div>
 
     <div class="p-4 overflow-y-auto space-y-3.5">
-      <!-- 組の内部（ドリルダウン）連携エリア -->
       <div id="subOrgActionBox" class="bg-gradient-to-r from-[#241e14] to-[#1a1d29] border border-[#d4af37]/50 rounded-xl p-3 flex items-center justify-between gap-3">
         <div class="min-w-0">
           <div class="text-xs font-bold text-[#f3d27a]">組の内部組織図（傘下・枝団体）</div>
@@ -359,7 +356,7 @@
     </div>
   </section>
 
-  <!-- 組織管理・セーブメニューシート -->
+  <!-- メニューシート -->
   <section id="menuSheet" class="bottom-sheet">
     <div class="px-4 py-3 border-b border-[#282d3d] flex items-center justify-between">
       <span class="text-sm text-[#d4af37] font-bold">組織管理・データ保存</span>
@@ -420,7 +417,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
 import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-// --- Firebase 初期化 ---
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'yakuza-org-mobile';
 let db = null;
 let auth = null;
@@ -451,7 +447,7 @@ async function initFirebase() {
   }
 }
 
-// --- サンプルデータ（皇龍会 ＋ 二次・三次団体ドリルダウン連携済） ---
+// サンプルデータ
 const defaultOrgId = "org_koryukai_main";
 const subOrgShinonomeId = "org_shinonome_sub";
 const subOrgKurodaId = "org_kuroda_third";
@@ -484,11 +480,16 @@ const sampleStore = {
               role: "若頭",
               dept: "東雲組 組長",
               badgeColor: "crimson",
-              subOrgId: subOrgShinonomeId, // 東雲組の内部組織図へリンク
+              subOrgId: subOrgShinonomeId,
               children: [
                 { id: 13, name: "水瀬 秀夫", role: "幹部", dept: "水瀬一家 総長", badgeColor: "purple", children: [] },
                 { id: 14, name: "真壁 龍", role: "幹部", dept: "三代目北辰会 会長", badgeColor: "purple", children: [] },
-                { id: 15, name: "古賀 蓮司", role: "幹部", dept: "大東連合 総裁", badgeColor: "purple", children: [] }
+                { id: 15, name: "古賀 蓮司", role: "幹部", dept: "大東連合 総裁", badgeColor: "purple", children: [] },
+                { id: 16, name: "藤沢 義正", role: "幹部", dept: "藤沢組 組長", badgeColor: "purple", children: [] },
+                { id: 18, name: "榊 颯", role: "幹部", dept: "富士見組 二代目 組長", badgeColor: "purple", children: [] },
+                { id: 19, name: "鳴海 義明", role: "幹部", dept: "銀嶺会", badgeColor: "purple", children: [] },
+                { id: 20, name: "岩崎 八雲", role: "幹部", dept: "常盤興業 組長", badgeColor: "purple", children: [] },
+                { id: 21, name: "金村 肇", role: "幹部", dept: "金村組 組長", badgeColor: "purple", children: [] }
               ]
             },
             {
@@ -499,7 +500,8 @@ const sampleStore = {
               badgeColor: "crimson",
               children: [
                 { id: 25, name: "大木 忠雄", role: "舎弟頭付・直参幹部", dept: "大木組 組長", badgeColor: "purple", children: [] },
-                { id: 26, name: "矢野 誠吾", role: "舎弟頭付・直参幹部", dept: "信王会 会長", badgeColor: "purple", children: [] }
+                { id: 26, name: "矢野 誠吾", role: "舎弟頭付・直参幹部", dept: "信王会 会長", badgeColor: "purple", children: [] },
+                { id: 27, name: "市村 堅", role: "舎弟頭付・直参幹部", dept: "市村組 組長", badgeColor: "purple", children: [] }
               ]
             }
           ]
@@ -512,7 +514,8 @@ const sampleStore = {
           badgeColor: "gold",
           children: [
             { id: 22, name: "沢村 狂介", role: "本部長補佐", dept: "二代目初鹿野組 組長", badgeColor: "purple", children: [] },
-            { id: 23, name: "宇月 健一", role: "本部長補佐", dept: "宇月組 組長", badgeColor: "purple", children: [] }
+            { id: 23, name: "宇月 健一", role: "本部長補佐", dept: "宇月組 組長", badgeColor: "purple", children: [] },
+            { id: 24, name: "白木 仁", role: "本部長補佐", dept: "白木一家 総裁", badgeColor: "purple", children: [] }
           ]
         }
       ]
@@ -537,7 +540,7 @@ const sampleStore = {
           role: "若頭",
           dept: "黒田興業 組長",
           badgeColor: "crimson",
-          subOrgId: subOrgKurodaId, // さらに三次団体へドリルダウン可能
+          subOrgId: subOrgKurodaId,
           children: [
             { id: 4, name: "柴田 鉄平", role: "若頭補佐", dept: "本部長兼務", badgeColor: "blue", children: [] }
           ]
@@ -572,19 +575,37 @@ const sampleStore = {
   }
 };
 
-// --- 状態管理 ---
 const $ = id => document.getElementById(id);
 
-let orgStore = JSON.parse(JSON.stringify(sampleStore));
+// --- ローカルストレージからの初期読み込み ---
+let orgStore = sampleStore;
 let currentOrgId = defaultOrgId;
-let root = orgStore[defaultOrgId].root;
-let selected = 1;
-let selectedColor = "gold";
-let nextId = orgStore[defaultOrgId].nextId;
-let zoom = 1;
-let collapsed = new Set();
 
-// --- 階層の深さを計算するヘルパー ---
+try {
+  const saved = localStorage.getItem("yakuza_orgStore_v2");
+  const savedId = localStorage.getItem("yakuza_currentOrgId_v2");
+  if (saved) {
+    const parsed = JSON.parse(saved);
+    if (parsed && Object.keys(parsed).length > 0) {
+      orgStore = parsed;
+      if (savedId && orgStore[savedId]) {
+        currentOrgId = savedId;
+      } else {
+        currentOrgId = Object.keys(orgStore)[0];
+      }
+    }
+  }
+} catch (e) {
+  console.warn("LocalStorage load error:", e);
+}
+
+let root = orgStore[currentOrgId].root;
+let selected = root.id;
+let selectedColor = "gold";
+let nextId = orgStore[currentOrgId].nextId || 30;
+let zoom = 1;
+let collapsed = new Set(orgStore[currentOrgId].collapsed || []);
+
 function getOrgDepth(orgId) {
   let depth = 0;
   let curr = orgStore[orgId];
@@ -597,7 +618,6 @@ function getOrgDepth(orgId) {
   return depth;
 }
 
-// --- トースト＆ステータス表示 ---
 let toastTimer = null;
 function showToast(msg) {
   const el = $("toast");
@@ -613,7 +633,6 @@ function setSaveStatus(text, isSaved = true) {
   el.className = isSaved ? "text-[11px] text-emerald-400" : "text-[11px] text-amber-400";
 }
 
-// --- カスタムダイアログ ---
 function showDialog({ title, message, type = "confirm", defaultValue = "" }) {
   return new Promise((resolve) => {
     const overlay = $("customDialog");
@@ -653,22 +672,29 @@ function showDialog({ title, message, type = "confirm", defaultValue = "" }) {
   });
 }
 
-// --- クラウド保存・読込（Firestore） ---
+// --- 強力な一括セーブ機能（ローカル＆クラウド） ---
 async function saveToCloud(explicit = false) {
-  const currentMeta = orgStore[currentOrgId] || {};
-  orgStore[currentOrgId] = {
-    ...currentMeta,
-    name: currentMeta.name || "名称未設定組織",
-    root: JSON.parse(JSON.stringify(root)),
-    nextId,
-    collapsed: [...collapsed]
-  };
+  // 現在のツリー状態をストアに完全同期
+  if (orgStore[currentOrgId]) {
+    orgStore[currentOrgId].root = JSON.parse(JSON.stringify(root));
+    orgStore[currentOrgId].nextId = nextId;
+    orgStore[currentOrgId].collapsed = [...collapsed];
+  }
 
   setSaveStatus("保存中...", false);
 
+  try {
+    // 1. ローカルストレージに即時保存
+    localStorage.setItem("yakuza_orgStore_v2", JSON.stringify(orgStore));
+    localStorage.setItem("yakuza_currentOrgId_v2", currentOrgId);
+  } catch (e) {
+    console.warn("Local storage write error:", e);
+  }
+
+  // 2. クラウド（Firebase）保存
   if (!db || !currentUser) {
-    setSaveStatus("一時保存済み", true);
-    if (explicit) showToast("現在のデータを保存しました");
+    setSaveStatus("ローカル保存済", true);
+    if (explicit) showToast("端末にデータを保存しました");
     return;
   }
 
@@ -680,12 +706,12 @@ async function saveToCloud(explicit = false) {
     });
     const now = new Date();
     const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-    setSaveStatus(`保存済 (${timeStr})`, true);
+    setSaveStatus(`同期済 (${timeStr})`, true);
     if (explicit) showToast("クラウドにセーブしました");
   } catch (err) {
-    console.error("Save error:", err);
-    setSaveStatus("保存エラー", false);
-    if (explicit) showToast("保存に失敗しました");
+    console.error("Cloud save error:", err);
+    setSaveStatus("クラウド同期失敗", false);
+    if (explicit) showToast("クラウド保存に失敗しました");
   }
 }
 
@@ -700,17 +726,14 @@ async function loadFromCloud() {
         orgStore = parsed.orgStore;
         currentOrgId = orgStore[parsed.currentOrgId] ? parsed.currentOrgId : Object.keys(orgStore)[0];
         switchOrg(currentOrgId, false);
-        setSaveStatus("データ復元済", true);
+        setSaveStatus("クラウド復元済", true);
       }
-    } else {
-      await saveToCloud(false);
     }
   } catch (err) {
     console.warn("Load error:", err);
   }
 }
 
-// --- ツリー操作ユーティリティ ---
 function flatten(n) {
   return [n, ...(n.children || []).flatMap(flatten)];
 }
@@ -744,7 +767,6 @@ function updateOrgSelectUI() {
     sel.append(opt);
   });
 
-  // 親組織がある場合はナビゲーションバーを表示
   const currentData = orgStore[currentOrgId];
   const navBar = $("parentNavBar");
   const depth = getOrgDepth(currentOrgId);
@@ -764,6 +786,13 @@ function updateOrgSelectUI() {
 }
 
 function switchOrg(id, autoSave = true, focusNodeId = null) {
+  // 切り替え前に現在の状態をストアに確実に保存
+  if (orgStore[currentOrgId]) {
+    orgStore[currentOrgId].root = JSON.parse(JSON.stringify(root));
+    orgStore[currentOrgId].nextId = nextId;
+    orgStore[currentOrgId].collapsed = [...collapsed];
+  }
+
   if (!orgStore[id]) return;
   currentOrgId = id;
   const data = orgStore[id];
@@ -771,13 +800,13 @@ function switchOrg(id, autoSave = true, focusNodeId = null) {
   nextId = data.nextId || Math.max(...flatten(root).map(n => Number(n.id) || 0)) + 1;
   collapsed = new Set(data.collapsed || []);
   selected = focusNodeId && find(root, focusNodeId) ? focusNodeId : root.id;
+
   updateOrgSelectUI();
   syncForm();
   draw();
   if (autoSave) saveToCloud(false);
 }
 
-// --- 編集シート制御 ---
 function openSheet(sheetId) {
   closeAllSheets();
   $("sheetBackdrop").classList.add("open");
@@ -801,7 +830,6 @@ $("btnOpenEdit").onclick = () => {
 
 $("btnMenu").onclick = () => openSheet("menuSheet");
 
-// --- 組の内部（ドリルダウン）作成・移動ロジック ---
 function guessSubOrgName(node) {
   if (node.dept) {
     const cleaned = node.dept.replace(/\s*(組長|総長|会長|総裁|代表|社長|若頭|幹部).*$/, "").trim();
@@ -814,7 +842,6 @@ function guessSubOrgName(node) {
 async function openOrCreateSubOrg(node) {
   if (!node || node.id === root.id) return;
 
-  // すでにリンク済みの内部組織図が存在する場合
   if (node.subOrgId && orgStore[node.subOrgId]) {
     closeAllSheets();
     saveToCloud(false);
@@ -823,7 +850,6 @@ async function openOrCreateSubOrg(node) {
     return;
   }
 
-  // 新規作成する場合
   const defaultGroupName = guessSubOrgName(node);
   const nextDepth = getOrgDepth(currentOrgId) + 1;
   const tierName = nextDepth === 1 ? "二次団体" : nextDepth === 2 ? "三次団体" : `${nextDepth + 1}次団体`;
@@ -841,16 +867,13 @@ async function openOrCreateSubOrg(node) {
   const newSubOrgId = "org_sub_" + Date.now();
   const prefixArrows = "└".repeat(nextDepth);
 
-  // 親ノードにリンクIDを保存
   node.subOrgId = newSubOrgId;
   if (!node.dept) {
     node.dept = `${trimmedName} 組長`;
   }
-  saveToCloud(false);
 
   const parentCleanName = orgStore[currentOrgId].name.replace(/^└+\s*/, "").replace(/（.*?）$/, "");
 
-  // 新しい内部組織図データを作成（トップに該当幹部を自動配置）
   orgStore[newSubOrgId] = {
     name: `${prefixArrows} ${trimmedName}（${tierName}）`,
     parentOrgId: currentOrgId,
@@ -887,7 +910,6 @@ $("btnBackToParent").onclick = () => {
   }
 };
 
-// --- フォーム同期 ---
 function updateColorPickerUI(color) {
   selectedColor = color;
   document.querySelectorAll(".color-btn").forEach(btn => {
@@ -911,7 +933,6 @@ function syncForm() {
   $("selectedLabel").textContent = `${n.name}（${n.role || "役職なし"}）`;
   $("deleteNode").disabled = n.id === root.id;
 
-  // トップ（ルート）以外のノードでは「組の内部へ」ボタンを表示
   const subBox = $("subOrgActionBox");
   if (n.id === root.id) {
     subBox.classList.add("hidden");
@@ -929,7 +950,6 @@ function syncForm() {
   }
 }
 
-// --- 組織図描画 ---
 function renderNode(n, isRoot = false) {
   const branch = document.createElement("div");
   branch.className = "branch";
@@ -957,7 +977,6 @@ function renderNode(n, isRoot = false) {
     card.append(dept);
   }
 
-  // 組の内部組織図がリンクされている場合はカード上に直接ショートカットを表示
   if (!isRoot && n.subOrgId && orgStore[n.subOrgId]) {
     const subData = orgStore[n.subOrgId];
     const subCount = flatten(subData.root).length;
@@ -993,7 +1012,6 @@ function renderNode(n, isRoot = false) {
     card.append(toggle);
   }
 
-  // カードタップで選択（選択済みを再タップで編集シート）
   card.onclick = e => {
     e.stopPropagation();
     if (selected === n.id) {
@@ -1100,12 +1118,10 @@ function draw() {
   });
 }
 
-// --- イベントリスナー ---
 $("btnSaveExplicit").onclick = () => saveToCloud(true);
 
 $("orgSelect").onchange = e => {
-  saveToCloud(false);
-  switchOrg(e.target.value, false);
+  switchOrg(e.target.value, true);
   showToast("組織を切り替えました");
 };
 
@@ -1146,7 +1162,7 @@ function addMember(isSibling) {
   selected = newNode.id;
   syncForm();
   draw();
-  saveToCloud(false);
+  saveToCloud(true);
   openSheet("editSheet");
   setTimeout(() => {
     $("nodeName").focus();
@@ -1166,7 +1182,6 @@ $("applyEdit").onclick = () => {
   n.dept = $("nodeDept").value.trim();
   n.badgeColor = selectedColor;
 
-  // 紐づく内部組織図がある場合はトップ名も自動同期する
   if (n.subOrgId && orgStore[n.subOrgId]) {
     orgStore[n.subOrgId].root.name = n.name;
   }
@@ -1194,7 +1209,7 @@ $("deleteNode").onclick = async () => {
   selected = p.id;
   syncForm();
   draw();
-  saveToCloud(false);
+  saveToCloud(true);
   showToast("削除しました");
 };
 
@@ -1208,7 +1223,6 @@ $("newOrg").onclick = async () => {
   });
   if (!name || !name.trim()) return;
 
-  saveToCloud(false);
   const newId = "org_" + Date.now();
   orgStore[newId] = {
     name: name.trim(),
@@ -1262,7 +1276,6 @@ $("deleteOrg").onclick = async () => {
   });
   if (!ok) return;
 
-  // 親組織からのリンクも解除
   if (currentData.parentOrgId && orgStore[currentData.parentOrgId]) {
     const parentNode = find(orgStore[currentData.parentOrgId].root, currentData.parentNodeId);
     if (parentNode) delete parentNode.subOrgId;
@@ -1291,15 +1304,13 @@ $("loadSample").onclick = async () => {
   showToast("サンプルを読み込みました");
 };
 
-// JSONファイル保存（単体または全階層パック）
 $("saveJson").onclick = () => {
   closeAllSheets();
-  orgStore[currentOrgId] = {
-    ...orgStore[currentOrgId],
-    root: JSON.parse(JSON.stringify(root)),
-    nextId,
-    collapsed: [...collapsed]
-  };
+  if (orgStore[currentOrgId]) {
+    orgStore[currentOrgId].root = JSON.parse(JSON.stringify(root));
+    orgStore[currentOrgId].nextId = nextId;
+    orgStore[currentOrgId].collapsed = [...collapsed];
+  }
 
   const orgName = (orgStore[currentOrgId]?.name || "yakuza-org").replace(/^└+\s*/, "");
   const blob = new Blob([JSON.stringify({
@@ -1319,7 +1330,6 @@ $("saveJson").onclick = () => {
   showToast("JSONファイルをダウンロードしました");
 };
 
-// JSONファイル読込（既存の単体JSONと全階層JSONの両方に完全対応）
 $("loadJson").onclick = () => $("fileInput").click();
 
 $("fileInput").onchange = async e => {
@@ -1364,7 +1374,6 @@ window.addEventListener("resize", () => {
   requestAnimationFrame(() => drawLines($("tree"), zoom));
 });
 
-// 初期化実行
 updateOrgSelectUI();
 syncForm();
 draw();
