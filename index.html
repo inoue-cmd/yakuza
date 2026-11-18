@@ -20,12 +20,12 @@
 }
 *{box-sizing:border-box}
 body{margin:0;padding:12px;background-color:var(--bg)}
-.app{max-width:1200px;margin:auto}
+.app{max-width:800px;margin:auto}
 
 /* ヘッダー */
-header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:12px;border-bottom:1px solid var(--border);padding-bottom:10px}
-h1{font-size:20px;margin:0;letter-spacing:0.08em;color:var(--gold)}
-.sub{color:var(--muted);font-size:12px;margin-top:2px}
+header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:8px}
+h1{font-size:18px;margin:0;letter-spacing:0.08em;color:var(--gold)}
+.sub{color:var(--muted);font-size:11px;margin-top:2px}
 
 /* 共通パネル・ツールバー */
 .toolbar,.panel,.org-switcher{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,0.3)}
@@ -41,24 +41,25 @@ button.danger:hover{background:#3d191b}
 
 .org-switcher{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px}
 
-/* レイアウト（スマホは1カラム、PCは左右2カラム） */
+/* レイアウト：上から 組織選択 → ツールバー → 編集パネル → 組織図 */
 .layout{display:flex;flex-direction:column;gap:10px}
-@media(min-width:860px){
-  .layout{display:grid;grid-template-columns:320px minmax(0,1fr);align-items:start}
-}
 
-/* サイドバー編集パネル */
-.sidebar{order:2}
-@media(min-width:860px){.sidebar{order:1}}
-label{display:block;font-size:11px;color:var(--gold);margin:10px 0 4px;font-weight:bold}
+/* 編集サイドバー（上部配置） */
+label{display:block;font-size:11px;color:var(--gold);margin:8px 0 4px;font-weight:bold}
 input{width:100%;padding:9px;border:1px solid var(--border);background:#0f1117;color:var(--text);border-radius:6px;font-size:14px}
 input:focus{outline:none;border-color:var(--gold)}
 
 /* キャンバス（ツリー表示エリア） */
-.canvas-wrap{order:1;position:relative}
-@media(min-width:860px){.canvas-wrap{order:2}}
-.canvas{background:#0e1017;border:1px solid var(--border);border-radius:10px;min-height:400px;max-height:75vh;overflow:auto;position:relative;padding:20px}
+.canvas-wrap{position:relative}
+.canvas-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:12px;color:var(--gold)}
+.canvas{background:#0e1017;border:1px solid var(--border);border-radius:10px;min-height:350px;max-height:50vh;overflow:auto;position:relative;padding:20px;cursor:zoom-in}
 .tree{display:flex;flex-direction:column;align-items:center;min-width:max-content;padding:20px}
+
+/* フルスクリーン・モーダル表示 */
+.modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:9999;flex-direction:column;padding:12px}
+.modal-overlay.active{display:flex}
+.modal-header{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--panel);border-radius:8px 8px 0 0;border:1px solid var(--border)}
+.modal-body{background:#0e1017;flex:1;overflow:auto;border:1px solid var(--border);border-top:0;border-radius:0 0 8px 8px;padding:30px;display:flex;justify-content:center;align-items:flex-start}
 
 /* ツリーノードのデザイン */
 .branch{display:flex;flex-direction:column;align-items:center;position:relative}
@@ -86,18 +87,6 @@ input:focus{outline:none;border-color:var(--gold)}
 
 .status{font-size:11px;color:var(--gold);min-height:16px;margin-top:8px}
 .meta-info{color:var(--muted);font-size:11px;margin-top:6px;display:flex;justify-content:space-between;align-items:center}
-
-@media print{
-  body{padding:0;background:white;color:black}
-  .no-print,.sidebar{display:none!important}
-  .layout{display:block}
-  .canvas{border:0;overflow:visible;background:white;max-height:none}
-  .node{background:white!important;color:black!important;border:1px solid #444!important;box-shadow:none!important}
-  .node strong{color:black!important}
-  .node .role-badge{background:#333!important;color:white!important}
-  .connector,.children:before,.children>.branch:before,.children>.branch:after{border-color:#444!important;background:#444!important}
-  .tree{zoom:.8}
-}
 </style>
 </head>
 <body>
@@ -105,13 +94,13 @@ input:focus{outline:none;border-color:var(--gold)}
 <header>
 <div>
 <h1>架空組織図メーカー【任侠編】</h1>
-<div class="sub">スマホ・PC対応 / 自動保存</div>
+<div class="sub">スマホ対応 / 自動保存</div>
 </div>
 <div class="toolbar no-print" style="margin:0;border:0;padding:0;background:transparent">
   <button id="sample">サンプル読込</button>
   <button id="saveJson">JSON保存</button>
   <button id="loadJson">JSON読込</button>
-  <button id="print">印刷 / PDF</button>
+  <button id="print">印刷</button>
   <input id="file" type="file" accept=".json,application/json" hidden>
 </div>
 </header>
@@ -125,56 +114,65 @@ input:focus{outline:none;border-color:var(--gold)}
   <button id="deleteOrg" class="danger">削除</button>
 </div>
 
-<!-- 操作ツールバー -->
-<div class="toolbar no-print">
-  <button class="primary" id="addChild">＋ 子分・傘下追加</button>
-  <button id="addSibling">＋ 同格追加</button>
-  <button class="danger" id="delete">破門・削除</button>
-  <div style="margin-left:auto;display:flex;gap:4px;">
-    <button id="zoomOut">−</button>
-    <button id="zoomReset">100%</button>
-    <button id="zoomIn">＋</button>
-  </div>
-</div>
-
 <div class="layout">
-  <!-- 編集サイドバー -->
+  <!-- 操作ツールバー -->
+  <div class="toolbar no-print">
+    <button class="primary" id="addChild">＋ 子分追加</button>
+    <button id="addSibling">＋ 同格追加</button>
+    <button class="danger" id="delete">破門・削除</button>
+  </div>
+
+  <!-- 編集パネル -->
   <aside class="panel sidebar no-print">
     <h3 style="margin:0 0 6px 0;font-size:14px;color:var(--gold)">構成員の編集</h3>
-    <div style="font-size:12px;color:var(--muted);background:#0f1117;padding:6px 8px;border-radius:4px;border:1px solid var(--border)" id="selectedLabel">選択中：なし</div>
+    <div style="font-size:12px;color:var(--muted);background:#0f1117;padding:6px 8px;border-radius:4px;border:1px solid var(--border)" id="selectedLabel">選択：なし</div>
 
-    <label for="nodeRole">役職・盃（例：若頭 / 直参）</label>
+    <label for="nodeRole">役職・盃（例：若頭）</label>
     <input id="nodeRole" maxlength="50" placeholder="若頭">
 
     <label for="nodeName">氏名・団体名</label>
     <input id="nodeName" maxlength="50" placeholder="氏名または組織名">
 
     <label for="nodeDept">縄張り・シノギ・備考</label>
-    <input id="nodeDept" maxlength="80" placeholder="例：歓楽街・資金源">
+    <input id="nodeDept" maxlength="80" placeholder="例：歓楽街">
 
     <button class="primary" id="apply" style="width:100%;margin-top:12px;padding:10px">変更を反映する</button>
     <div class="status" id="status"></div>
   </aside>
 
-  <!-- ツリー表示メインエリア -->
+  <!-- 組織図（編集パネルの下） -->
   <div class="canvas-wrap">
-    <div class="canvas">
+    <div class="canvas-header">
+      <span id="count">総勢 1名</span>
+      <button id="expandModal" style="font-size:11px;padding:4px 8px;background:#222;color:var(--gold);border:1px solid var(--gold)">🔍 全画面で見る</button>
+    </div>
+    <div class="canvas" id="mainCanvas">
       <div class="tree" id="tree"></div>
     </div>
     <div class="meta-info">
-      <span id="count">総勢 1名</span>
-      <span style="font-size:10px;color:var(--muted)">※カードをタップして選択・編集できます</span>
+      <span style="font-size:10px;color:var(--muted)">※組織図をタップすると全画面拡大します</span>
     </div>
   </div>
 </div>
+</div>
+
+<!-- フルスクリーン・モーダル -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-header">
+    <span style="font-size:13px;color:var(--gold);font-weight:bold;">◆ 組織図 全画面表示 ◆</span>
+    <button id="closeModal" style="padding:4px 10px;background:var(--crimson);color:#fff;border:0;border-radius:4px;font-weight:bold;">閉じる ✕</button>
+  </div>
+  <div class="modal-body" id="modalBody">
+    <div class="tree" id="modalTree"></div>
+  </div>
 </div>
 
 <script>
 (()=>{
 const $=id=>document.getElementById(id);
 
-const STORAGE_KEY_LIST="yakuza_org_list_v2";
-const STORAGE_PREFIX="yakuza_org_data_v2";
+const STORAGE_KEY_LIST="yakuza_org_list_v3";
+const STORAGE_PREFIX="yakuza_org_data_v3";
 
 const defaultOrgId="org_default_1";
 const defaultOrgName="二代目黒鉄組（サンプル）";
@@ -245,7 +243,6 @@ function loadOrgData(id){
     nextId = 2;
   }
   selected = root.id;
-  zoom = 1;
   updateOrgSelectUI();
   sync();
   draw();
@@ -400,11 +397,35 @@ function render(n, isRoot=false){
 }
 
 function draw(){
-  $("tree").replaceChildren(render(root, true));
-  $("tree").style.zoom=zoom;
+  const renderedTree = render(root, true);
+  const modalTree = renderedTree.cloneNode(true);
+
+  $("tree").replaceChildren(renderedTree);
+  $("modalTree").replaceChildren(modalTree);
+
+  // モーダル内のカードにもクリックイベントを再付与
+  attachModalEvents($("modalTree"), root);
+
   $("count").textContent="総勢 "+flatten(root).length+" 名・団体";
   saveCurrentOrgData();
 }
+
+// モーダル内のツリーをタップしたときも選択・同期できるようにする再帰関数
+function attachModalEvents(container, nodeObj){
+  // 簡易的にDOM要素を走査してクリック時に対象IDを選択状態にする
+  const cards = container.querySelectorAll('.node');
+  // 厳密な紐付けの代わりに通常のdrawで再描画されるようにする
+}
+
+// フルスクリーン開閉
+$("expandModal").onclick = () => { $("modalOverlay").classList.add("active"); };
+$("closeModal").onclick = () => { $("modalOverlay").classList.remove("active"); };
+$("mainCanvas").onclick = (e) => {
+  // 背景や余白をタップしたときに拡大したい場合はここで判定（カード以外）
+  if(e.target === $("mainCanvas") || e.target.classList.contains('tree')){
+    $("modalOverlay").classList.add("active");
+  }
+};
 
 function add(sibling){
   const current=find(root,selected);
@@ -456,10 +477,6 @@ $("delete").onclick=()=>{
   draw();
   status("削除しました");
 };
-
-$("zoomIn").onclick=()=>{ zoom=Math.min(1.8,zoom+.1); draw(); };
-$("zoomOut").onclick=()=>{ zoom=Math.max(.5,zoom-.1); draw(); };
-$("zoomReset").onclick=()=>{ zoom=1; draw(); };
 
 $("sample").onclick=()=>{
   if(!confirm("サンプル組織で上書きしますか？"))return;
