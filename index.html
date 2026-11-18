@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>架空組織図メーカー【任侠編・マルチ保存対応】</title>
+<style>
+:root{
+  --bg:#0d0e12;
+  --panel:#16181f;
+  --card:#1d2029;
+  --border:#333846;
+  --gold:#c5a059;
+  --crimson:#b8292f;
+  --text:#eceae4;
+  --muted:#9499a6;
+  font-family:"Hiragino Mincho ProN","Yu Mincho","MS PMincho",serif;
+  color:var(--text);
+  background:var(--bg);
+}
+*{box-sizing:border-box}
+body{margin:0;padding:22px;background-image:radial-gradient(#1f222c 1px, transparent 1px);background-size:20px 20px}
+.app{max-width:1280px;margin:auto}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px;border-bottom:1px solid var(--border);padding-bottom:14px}
+h1{font-size:24px;margin:0;letter-spacing:0.12em;color:var(--gold);text-shadow:0 2px 4px rgba(0,0,0,0.8)}
+.sub,.meta{color:var(--muted);font-size:13px;margin-top:4px;font-family:system-ui,sans-serif}
+.toolbar,.panel{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:13px;margin-bottom:14px;box-shadow:0 4px 16px rgba(0,0,0,0.4)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+button, select{border:1px solid var(--border);background:#232733;color:var(--text);border-radius:4px;padding:9px 14px;cursor:pointer;font-size:13px;font-family:inherit;letter-spacing:0.05em;transition:0.15s}
+button:hover, select:hover{background:#2e3342;border-color:var(--gold)}
+select{padding:8px 12px}
+button:disabled{opacity:0.4;cursor:not-allowed}
+button.primary{background:var(--crimson);color:#fff;border-color:#d6383f;font-weight:bold}
+button.primary:hover{background:#9c2025}
+button.danger{color:#ff7b7b;border-color:#5c282a}
+button.danger:hover{background:#3d191b}
+.org-switcher{display:flex;gap:8px;align-items:center;background:#121318;padding:6px 12px;border:1px solid var(--border);border-radius:6px;margin-bottom:14px;flex-wrap:wrap}
+.layout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:14px}
+label{display:block;font-size:12px;color:var(--gold);margin:12px 0 5px;font-family:system-ui,sans-serif}
+input{width:100%;padding:10px;border:1px solid var(--border);background:#101217;color:var(--text);border-radius:4px;font:inherit}
+input:focus{outline:none;border-color:var(--gold)}
+.canvas{background:#121318;border:1px solid var(--border);border-radius:8px;min-height:500px;overflow:auto;position:relative}
+.tree{display:flex;flex-direction:column;align-items:center;min-width:max-content;padding:40px}
+.branch{display:flex;flex-direction:column;align-items:center;position:relative}
+.node{min-width:170px;max-width:240px;padding:14px 16px;border:1px solid #454b5c;border-radius:4px;background:linear-gradient(180deg,#232631 0%,#181a22 100%);text-align:center;box-shadow:0 4px 12px rgba(0,0,0,0.6);cursor:pointer;position:relative;transition:0.15s}
+.node:hover{border-color:var(--gold)}
+.node.selected{outline:2px solid var(--crimson);border-color:var(--crimson);box-shadow:0 0 15px rgba(184,41,47,0.4)}
+.node.root-node{border:2px solid var(--gold);background:linear-gradient(180deg,#2c251d 0%,#1a1612 100%);padding-top:18px}
+.node.root-node::before{content:"◆ 代紋 ◆";display:block;font-size:10px;color:var(--gold);letter-spacing:0.2em;margin-bottom:4px}
+.node .role-badge{display:inline-block;font-size:11px;color:#fff;background:var(--crimson);padding:2px 8px;border-radius:2px;margin-bottom:6px;letter-spacing:0.08em}
+.node.root-node .role-badge{background:var(--gold);color:#121318;font-weight:bold}
+.node strong{display:block;font-size:16px;letter-spacing:0.08em;color:#fff}
+.node small{display:block;color:var(--muted);margin-top:6px;font-size:12px;font-family:system-ui,sans-serif;border-top:1px dashed #333846;padding-top:5px}
+.connector{height:24px;border-left:1px solid var(--gold)}
+.children{display:flex;justify-content:center;gap:22px;position:relative;padding-top:24px}
+.children:before{content:"";position:absolute;top:0;left:50%;height:1px;width:calc(100% - 170px);transform:translateX(-50%);background:var(--gold)}
+.children>.branch:before{content:"";position:absolute;top:0;height:24px;border-left:1px solid var(--gold)}
+.children>.branch:first-child:after,.children>.branch:last-child:after{content:"";position:absolute;top:0;width:50%;border-top:1px solid var(--gold)}
+.children>.branch:first-child:after{left:50%}
+.children>.branch:last-child:after{right:50%}
+.children>.branch:only-child:after{display:none}
+.children>.branch .node{position:relative;z-index:1}
+.status{font-size:12px;color:var(--gold);min-height:18px;margin-top:10px;font-family:system-ui,sans-serif}
+@media(max-width:760px){
+  body{padding:12px}
+  .layout{grid-template-columns:1fr}
+  .canvas{min-height:380px}
+  h1{font-size:20px}
+}
+@media print{
+  body{padding:0;background:white;color:black}
+  .no-print,.sidebar{display:none!important}
+  .layout{display:block}
+  .canvas{border:0;overflow:visible;background:white}
+  .node{background:white!important;color:black!important;border:1px solid #333!important;box-shadow:none!important}
+  .node strong{color:black!important}
+  .node .role-badge{background:#333!important;color:white!important}
+  .connector,.children:before,.children>.branch:before,.children>.branch:after{border-color:#333!important;background:#333!important}
+  .tree{zoom:.8}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+<div>
+<h1>架空組織図メーカー【任侠編】</h1>
+<div class="sub">複数の組織データをブラウザに保存・切り替えして管理できます。</div>
+</div>
+<div class="toolbar no-print">
+<button id="sample">サンプル組織（黒鉄組）読込</button>
+<button id="saveJson">JSONファイル保存</button>
+<button id="loadJson">JSONファイル読込</button>
+<button id="print">白黒印刷 / PDF</button>
+<input id="file" type="file" accept=".json,application/json" hidden>
+</div>
+</header>
+
+<!-- 組織の切り替え・管理バー -->
+<div class="org-switcher no-print">
+  <span style="font-size:12px;color:var(--gold);font-weight:bold;">組織選択：</span>
+  <select id="orgSelect"></select>
+  <button id="newOrg" class="primary">＋ 新しい組織を作成</button>
+  <button id="renameOrg">組織名を変更</button>
+  <button id="deleteOrg" class="danger">この組織を削除</button>
+</div>
+
+<div class="toolbar no-print">
+<button class="primary" id="addChild">＋ 傘下・子分を追加</button>
+<button id="addSibling">＋ 同格（兄弟分）を追加</button>
+<button class="danger" id="delete">破門・選択ノード削除</button>
+<button id="zoomOut">縮小 −</button>
+<button id="zoomReset">100%</button>
+<button id="zoomIn">拡大 ＋</button>
+</div>
+
+<div class="layout">
+<aside class="panel sidebar no-print">
+<h3 style="margin:0;color:var(--gold);letter-spacing:0.08em">構成員・組織の編集</h3>
+<div class="meta" id="selectedLabel">選択中</div>
+
+<label for="nodeRole">役職・盃（例：組長 / 若頭）</label>
+<input id="nodeRole" maxlength="60" placeholder="若頭">
+
+<label for="nodeName">氏名・団体名（例：黒鉄 厳蔵）</label>
+<input id="nodeName" maxlength="60" placeholder="氏名または組織名">
+
+<label for="nodeDept">縄張り・シノギ・備考</label>
+<input id="nodeDept" maxlength="100" placeholder="例：歓楽街・武闘派">
+
+<button class="primary" id="apply" style="width:100%;margin-top:16px">情報を反映</button>
+<div class="status" id="status"></div>
+
+<hr style="border:0;border-top:1px solid var(--border);margin:18px 0">
+<div class="meta" style="color:var(--gold)">役職の目安（参考）</div>
+<ul style="font-size:12px;line-height:1.7;padding-left:18px;color:var(--muted);font-family:system-ui,sans-serif">
+<li><b>組長（総長）</b>：組織の頂点</li>
+<li><b>若頭</b>：ナンバー2（実務最高責任者）</li>
+<li><b>舎弟頭</b>：ご意見番・長老格</li>
+<li><b>本部長</b>：事務・金庫番</li>
+<li><b>若頭補佐</b>：執行部（直参組長）</li>
+</ul>
+</aside>
+
+<main>
+<div class="canvas">
+<div class="tree" id="tree"></div>
+</div>
+<div class="meta" id="count">総勢 1名・団体</div>
+</main>
+</div>
+</div>
+
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+
+const STORAGE_KEY_LIST="yakuza_org_list_v1";
+const STORAGE_PREFIX="yakuza_org_data_";
+
+// 初期データ
+const defaultOrgId="org_default_1";
+const defaultOrgName="二代目黒鉄組（初期サンプル）";
+const defaultRoot={
+  id:1,
+  name:"黒鉄 厳蔵",
+  role:"二代目黒鉄組 組長",
+  dept:"総本部（神室町）",
+  children:[
+    {
+      id:2,name:"陣内 宗介",role:"若頭 / 陣内組組長",dept:"執行部筆頭・港湾利権",
+      children:[
+        {id:5,name:"冴島 剛",role:"若頭補佐 / 冴島組組長",dept:"武闘派・実働部隊",children:[]},
+        {id:6,name:"氷室 怜司",role:"若頭補佐 / 氷室企画社長",dept:"フロント企業・金融",children:[]}
+      ]
+    },
+    {
+      id:3,name:"九条 勝",role:"舎弟頭 / 九条会会長",dept:"長老格・渉外担当",
+      children:[
+        {id:7,name:"三上 鉄也",role:"舎弟頭補佐",dept:"カジノ・興行仕切り",children:[]}
+      ]
+    },
+    {
+      id:4,name:"桐生 恭平",role:"本部長 / 桐生組組長",dept:"金庫番・本部運営",
+      children:[]
+    }
+  ]
+};
+
+let orgList = [];
+let currentOrgId = defaultOrgId;
+let root = JSON.parse(JSON.stringify(defaultRoot));
+let selected = 1;
+let nextId = 8;
+let zoom = 1;
+
+// ローカルストレージから組織リストをロード、なければ初期作成
+function initStorage(){
+  try{
+    const savedList = localStorage.getItem(STORAGE_KEY_LIST);
+    if(savedList){
+      orgList = JSON.parse(savedList);
+    }
+  }catch(e){}
+
+  if(!orgList.length){
+    orgList = [{ id: defaultOrgId, name: defaultOrgName }];
+    localStorage.setItem(STORAGE_KEY_LIST, JSON.stringify(orgList));
+    localStorage.setItem(STORAGE_PREFIX + defaultOrgId, JSON.stringify(defaultRoot));
+  }
+  currentOrgId = orgList[0].id;
+  loadOrgData(currentOrgId);
+}
+
+function saveOrgList(){
+  localStorage.setItem(STORAGE_KEY_LIST, JSON.stringify(orgList));
+}
+
+function saveCurrentOrgData(){
+  localStorage.setItem(STORAGE_PREFIX + currentOrgId, JSON.stringify({root, nextId}));
+}
+
+function loadOrgData(id){
+  currentOrgId = id;
+  const raw = localStorage.getItem(STORAGE_PREFIX + id);
+  if(raw){
+    try{
+      const data = JSON.parse(raw);
+      root = data.root;
+      nextId = data.nextId || (Math.max(...flatten(root).map(n=>n.id))+1);
+    }catch(e){
+      root = JSON.parse(JSON.stringify(defaultRoot));
+      nextId = 8;
+    }
+  }else{
+    root = { id:1, name:"新・組長", role:"組長", dept:"本家", children:[] };
+    nextId = 2;
+  }
+  selected = root.id;
+  zoom = 1;
+  updateOrgSelectUI();
+  sync();
+  draw();
+}
+
+function updateOrgSelectUI(){
+  const sel = $("orgSelect");
+  sel.innerHTML = "";
+  orgList.forEach(org=>{
+    const opt = document.createElement("option");
+    opt.value = org.id;
+    opt.textContent = org.name;
+    if(org.id === currentOrgId) opt.selected = true;
+    sel.append(opt);
+  });
+}
+
+$("orgSelect").onchange = e => {
+  saveCurrentOrgData();
+  loadOrgData(e.target.value);
+  status("組織を切り替えました");
+};
+
+$("newOrg").onclick = () => {
+  const name = prompt("新しく作る組織の名前（例：白虎会、鬼島組など）を入力してください：", "新規ヤクザ組織");
+  if(!name) return;
+
+  saveCurrentOrgData();
+  const newId = "org_" + Date.now();
+  orgList.push({ id: newId, name: name.trim() });
+  saveOrgList();
+
+  root = {
+    id: 1,
+    name: "初代 " + name.trim(),
+    role: "総長 / 組長",
+    dept: "本家・本部",
+    children: []
+  };
+  nextId = 2;
+  selected = 1;
+
+  saveCurrentOrgData();
+  updateOrgSelectUI();
+  sync();
+  draw();
+  status("新しい組織「" + name.trim() + "」を立ち上げました");
+};
+
+$("renameOrg").onclick = () => {
+  const org = orgList.find(o => o.id === currentOrgId);
+  if(!org) return;
+  const newName = prompt("組織名を変更します：", org.name);
+  if(!newName || !newName.trim()) return;
+
+  org.name = newName.trim();
+  saveOrgList();
+  updateOrgSelectUI();
+  status("組織名を変更しました");
+};
+
+$("deleteOrg").onclick = () => {
+  if(orgList.length <= 1){
+    alert("最後の組織は削除できません。新規組織を作成してから削除してください。");
+    return;
+  }
+  const org = orgList.find(o => o.id === currentOrgId);
+  if(!confirm(`組織「${org.name}」を完全に削除しますか？この操作は元に戻せません。`)) return;
+
+  localStorage.removeItem(STORAGE_PREFIX + currentOrgId);
+  orgList = orgList.filter(o => o.id !== currentOrgId);
+  saveOrgList();
+
+  currentOrgId = orgList[0].id;
+  loadOrgData(currentOrgId);
+  status("組織を削除しました");
+};
+
+function find(n,id){
+  if(n.id===id)return n;
+  for(const c of n.children){
+    const r=find(c,id);
+    if(r)return r;
+  }
+  return null;
+}
+
+function parent(n,id){
+  for(const c of n.children){
+    if(c.id===id)return n;
+    const r=parent(c,id);
+    if(r)return r;
+  }
+  return null;
+}
+
+function flatten(n){
+  return [n,...n.children.flatMap(flatten)];
+}
+
+function status(s){
+  $("status").textContent=s;
+}
+
+function sync(){
+  const n=find(root,selected)||root;
+  selected=n.id;
+  $("nodeName").value=n.name;
+  $("nodeRole").value=n.role;
+  $("nodeDept").value=n.dept;
+  $("selectedLabel").textContent="選択中："+n.name+"（"+(n.role||"役職なし")+"）";
+  $("delete").disabled=n.id===root.id;
+}
+
+function render(n, isRoot=false){
+  const branch=document.createElement("div");
+  branch.className="branch";
+
+  const card=document.createElement("div");
+  card.className="node"+(isRoot?" root-node":"")+(n.id===selected?" selected":"");
+  card.tabIndex=0;
+  card.setAttribute("role","button");
+  card.setAttribute("aria-label",n.name+"を選択");
+
+  if(n.role){
+    const role=document.createElement("div");
+    role.className="role-badge";
+    role.textContent=n.role;
+    card.append(role);
+  }
+
+  const name=document.createElement("strong");
+  name.textContent=n.name;
+  card.append(name);
+
+  if(n.dept){
+    const dept=document.createElement("small");
+    dept.textContent=n.dept;
+    card.append(dept);
+  }
+
+  card.onclick=()=>{
+    selected=n.id;
+    sync();
+    draw();
+  };
+
+  card.onkeydown=e=>{
+    if(e.key==="Enter"||e.key===" "){
+      e.preventDefault();
+      card.click();
+    }
+  };
+
+  branch.append(card);
+
+  if(n.children.length){
+    const line=document.createElement("div");
+    line.className="connector";
+    branch.append(line);
+
+    const kids=document.createElement("div");
+    kids.className="children";
+
+    n.children.forEach(c=>kids.append(render(c, false)));
+    branch.append(kids);
+  }
+
+  return branch;
+}
+
+function draw(){
+  $("tree").replaceChildren(render(root, true));
+  $("tree").style.zoom=zoom;
+  $("count").textContent="総勢 "+flatten(root).length+" 名・団体";
+  $("zoomReset").textContent=Math.round(zoom*100)+"%";
+  saveCurrentOrgData();
+}
+
+function add(sibling){
+  const current=find(root,selected);
+  const target=sibling?parent(root,selected):current;
+
+  if(!target){
+    status("総長（トップ）と同格は追加できません");
+    return;
+  }
+
+  const n={
+    id:nextId++,
+    name:"新構成員・傘下組",
+    role:"若衆 / 直参",
+    dept:"シノギ・担当地区",
+    children:[]
+  };
+
+  target.children.push(n);
+  selected=n.id;
+  sync();
+  draw();
+  $("nodeRole").focus();
+  $("nodeRole").select();
+  status("傘下を追加しました。情報を入力してください");
+}
+
+$("addChild").onclick=()=>add(false);
+$("addSibling").onclick=()=>add(true);
+
+$("apply").onclick=()=>{
+  const n=find(root,selected);
+  n.name=$("nodeName").value.trim()||"名称未設定";
+  n.role=$("nodeRole").value.trim();
+  n.dept=$("nodeDept").value.trim();
+  sync();
+  draw();
+  status("情報を更新・自動保存しました");
+};
+
+$("delete").onclick=()=>{
+  if(selected===root.id)return;
+  if(!confirm("この構成員（および配下の組織）を破門・削除しますか？"))return;
+
+  const p=parent(root,selected);
+  p.children=p.children.filter(n=>n.id!==selected);
+  selected=p.id;
+  sync();
+  draw();
+  status("削除しました");
+};
+
+$("zoomIn").onclick=()=>{
+  zoom=Math.min(1.8,zoom+.1);
+  draw();
+};
+
+$("zoomOut").onclick=()=>{
+  zoom=Math.max(.5,zoom-.1);
+  draw();
+};
+
+$("zoomReset").onclick=()=>{
+  zoom=1;
+  draw();
+};
+
+$("sample").onclick=()=>{
+  if(!confirm("現在の組織を初期サンプル（二代目黒鉄組）に上書きしますか？"))return;
+  root = JSON.parse(JSON.stringify(defaultRoot));
+  nextId = 8;
+  selected = 1;
+  sync();
+  draw();
+  status("サンプル組織を展開しました");
+};
+
+$("saveJson").onclick=()=>{
+  const org = orgList.find(o => o.id === currentOrgId);
+  const blob=new Blob([JSON.stringify({orgName: org ? org.name : "org", root, nextId},null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download=(org ? org.name : "yakuza") + "-chart.json";
+  a.click();
+  URL.revokeObjectURL(url);
+  status("JSONファイルとしてバックアップを保存しました");
+};
+
+$("loadJson").onclick=()=>$("file").click();
+
+$("file").onchange=async e=>{
+  const f=e.target.files[0];
+  if(!f)return;
+  try{
+    const json=JSON.parse(await f.text());
+    // 旧フォーマット（root直下型）と新フォーマット両方に対応
+    const v = json.root ? json.root : json;
+    const importedOrgName = json.orgName || f.name.replace(/\.[^/.]+$/, "");
+
+    const valid=n=>
+      n&&
+      Number.isInteger(n.id)&&
+      typeof n.name==="string"&&
+      typeof n.role==="string"&&
+      typeof n.dept==="string"&&
+      Array.isArray(n.children)&&
+      n.children.every(valid);
+
+    if(!valid(v))throw Error();
+
+    root = v;
+    nextId = Math.max(...flatten(v).map(n=>n.id))+1;
+    selected = root.id;
+
+    // 新しい組織としてリストに追加して読み込む
+    const newId = "org_" + Date.now();
+    orgList.push({ id: newId, name: importedOrgName + " (読込)" });
+    currentOrgId = newId;
+    saveOrgList();
+    updateOrgSelectUI();
+
+    sync();
+    draw();
+    status("JSONファイルから組織を読み込みました");
+  }catch{
+    status("読み込み失敗：正しい組織図JSONファイルを選択してください");
+  }
+  e.target.value="";
+};
+
+$("print").onclick=()=>window.print();
+
+// 初期化実行
+initStorage();
+})();
+</script>
+</body>
+</html>
