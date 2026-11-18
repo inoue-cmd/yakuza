@@ -2,890 +2,1080 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>架空組織図メーカー【任侠編】</title>
-
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@700;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-:root{
-  --bg:#0b0c10;
-  --panel:#14161f;
-  --card:#1a1d26;
-  --border:#2a2f3d;
-  --gold:#d4af37;
-  --crimson:#c0392b;
-  --text:#f0eeeb;
-  --muted:#8c93a3;
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Sans","Meiryo",sans-serif;
-  color:var(--text);
-  background:var(--bg);
-}
-*{box-sizing:border-box}
-html,body{
-  margin:0;
-  padding:0;
-  background:var(--bg);
-  touch-action:manipulation;
-  -webkit-text-size-adjust:100%;
-}
-body{padding:12px}
-.app{max-width:1000px;margin:auto}
+  :root {
+    --bg: #090a0f;
+    --panel: #13151d;
+    --card: #1b1e29;
+    --border: #2c3140;
+    --gold: #d4af37;
+    --crimson: #c0392b;
+  }
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg);
+    color: #f0eeeb;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Meiryo", sans-serif;
+    overflow: hidden;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+  .font-ninkyo {
+    font-family: 'Noto Serif JP', serif;
+  }
+  /* キャンバスエリア */
+  .canvas-area {
+    flex: 1;
+    overflow: auto;
+    position: relative;
+    background-image: radial-gradient(#1f2330 1px, transparent 1px);
+    background-size: 20px 20px;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tree {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 100%;
+    padding: 40px 30px 140px 30px;
+    transform-origin: top center;
+    position: relative;
+  }
+  /* SVG接続線 */
+  .tree-lines {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .tree-lines line {
+    stroke: var(--gold);
+    stroke-width: 1.5;
+    opacity: 0.85;
+  }
+  /* ノード（構成員カード） */
+  .branch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+  }
+  .node {
+    min-width: 136px;
+    max-width: 180px;
+    padding: 10px;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    background: var(--card);
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.12s, border-color 0.12s, box-shadow 0.12s;
+    z-index: 2;
+  }
+  .node:active {
+    transform: scale(0.96);
+  }
+  .node.selected {
+    border-color: #ff4d4d;
+    box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.35), 0 6px 16px rgba(0, 0, 0, 0.7);
+    background: #232029;
+  }
+  .node.root-node {
+    border: 2px solid var(--gold);
+    background: linear-gradient(180deg, #262014 0%, #16140f 100%);
+  }
+  .node.root-node::before {
+    content: "◆ 本家 ◆";
+    display: block;
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 0.18em;
+    margin-bottom: 3px;
+  }
+  /* 役職バッジ */
+  .role-badge {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-bottom: 4px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+  .badge-gold { background: #d4af37; color: #0b0c10; }
+  .badge-crimson { background: #c0392b; color: #fff; }
+  .badge-purple { background: #8e44ad; color: #fff; }
+  .badge-blue { background: #2980b9; color: #fff; }
+  .badge-green { background: #27ae60; color: #fff; }
+  .badge-gray { background: #4b6584; color: #fff; }
 
-header{
-  display:flex;justify-content:space-between;align-items:flex-start;
-  gap:10px;flex-wrap:wrap;margin-bottom:10px;
-  border-bottom:1px solid var(--border);padding-bottom:8px
-}
-h1{font-size:18px;margin:0;letter-spacing:.08em;color:var(--gold)}
-.sub{color:var(--muted);font-size:11px;margin-top:2px}
-
-.toolbar,.panel,.org-switcher{
-  background:var(--panel);border:1px solid var(--border);
-  border-radius:10px;padding:10px;margin-bottom:10px;
-  box-shadow:0 2px 8px rgba(0,0,0,.3)
-}
-.toolbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-button,select{
-  border:1px solid var(--border);background:#1e222d;color:var(--text);
-  border-radius:6px;padding:8px 12px;cursor:pointer;font-size:13px;
-  font-family:inherit;transition:.1s;touch-action:manipulation
-}
-button:hover,select:hover{background:#282e3d;border-color:var(--gold)}
-select{padding:7px 10px;max-width:100%}
-button:disabled{opacity:.3;cursor:not-allowed}
-button.primary{background:var(--crimson);color:#fff;border-color:#e74c3c;font-weight:bold}
-button.primary:hover{background:#a93226}
-button.danger{color:#ff8080;border-color:#5c282a}
-button.danger:hover{background:#3d191b}
-
-.org-switcher{
-  display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px
-}
-.layout{display:flex;flex-direction:column;gap:10px}
-
-label{display:block;font-size:11px;color:var(--gold);margin:8px 0 4px;font-weight:bold}
-input{
-  width:100%;padding:9px;border:1px solid var(--border);
-  background:#0f1117;color:var(--text);border-radius:6px;font-size:14px
-}
-input:focus{outline:none;border-color:var(--gold)}
-
-.color-picker{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
-.color-btn{
-  width:32px;height:32px;border-radius:50%;border:2px solid transparent;
-  padding:0;cursor:pointer
-}
-.color-btn.active{
-  border-color:#fff;transform:scale(1.15);
-  box-shadow:0 0 8px rgba(255,255,255,.6)
-}
-
-.canvas-wrap{position:relative}
-.canvas-header{
-  display:flex;justify-content:space-between;align-items:center;
-  margin-bottom:6px;font-size:12px;color:var(--gold);gap:6px;flex-wrap:wrap
-}
-.canvas{
-  background:#0e1017;border:1px solid var(--border);border-radius:10px;
-  min-height:350px;max-height:60vh;overflow:auto;position:relative;padding:20px;
-  cursor:zoom-in;overscroll-behavior:contain
-}
-.tree{
-  display:flex;flex-direction:column;align-items:center;
-  min-width:max-content;padding:20px;transform-origin:top center;
-  position:relative
-}
-
-/* SVG接続線 */
-.tree-lines{
-  position:absolute;left:0;top:0;width:100%;height:100%;
-  overflow:visible;pointer-events:none;z-index:0
-}
-.tree-lines line{
-  stroke:var(--gold);stroke-width:1.2;vector-effect:non-scaling-stroke
-}
-
-/* フルスクリーン */
-.modal-overlay{
-  display:none;position:fixed;inset:0;width:100%;height:100%;
-  background:rgba(0,0,0,.96);z-index:9999;flex-direction:column;padding:10px
-}
-.modal-overlay.active{display:flex}
-.modal-header{
-  display:flex;justify-content:space-between;align-items:center;
-  padding:8px 10px;background:var(--panel);
-  border-radius:8px 8px 0 0;border:1px solid var(--border);
-  gap:6px;flex-wrap:wrap
-}
-.modal-zoom-controls{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
-.modal-zoom-controls button{padding:5px 10px;font-size:12px}
-.modal-body{
-  background:#0e1017;flex:1;overflow:auto;border:1px solid var(--border);
-  border-top:0;border-radius:0 0 8px 8px;padding:30px;
-  display:block;overscroll-behavior:contain
-}
-
-/* ノード */
-.branch{display:flex;flex-direction:column;align-items:center;position:relative;z-index:1}
-.node{
-  min-width:150px;max-width:220px;padding:10px 12px;
-  border:1px solid var(--border);border-radius:8px;background:var(--card);
-  text-align:center;box-shadow:0 3px 8px rgba(0,0,0,.4);
-  cursor:pointer;position:relative;transition:.15s;z-index:2
-}
-.node:hover{border-color:var(--gold)}
-.node.selected{
-  outline:2px solid var(--crimson);border-color:var(--crimson);
-  box-shadow:0 0 12px rgba(192,57,43,.5)
-}
-.node.root-node{
-  border:2px solid var(--gold);
-  background:linear-gradient(180deg,#221e15 100%,#15130e 0%);
-  padding-top:14px
-}
-.node.root-node::before{
-  content:"◆ 本家 ◆";display:block;font-size:9px;color:var(--gold);
-  letter-spacing:.15em;margin-bottom:3px
-}
-
-/* 役職バッジ */
-.role-badge{
-  display:inline-block;font-size:10px;color:#fff;padding:2px 6px;
-  border-radius:3px;margin-bottom:4px;letter-spacing:.05em;font-weight:bold
-}
-.badge-gold{background:#d4af37;color:#0f1117}
-.badge-crimson{background:#c0392b;color:#fff}
-.badge-purple{background:#8e44ad;color:#fff}
-.badge-blue{background:#2980b9;color:#fff}
-.badge-green{background:#27ae60;color:#fff}
-.badge-gray{background:#4b6584;color:#fff}
-
-.node strong{
-  display:block;font-size:14px;letter-spacing:.05em;color:#fff;
-  word-break:break-all
-}
-.node small{
-  display:block;color:var(--muted);margin-top:4px;font-size:11px;
-  border-top:1px dashed var(--border);padding-top:4px;word-break:break-all
-}
-
-/* 子組織 */
-.connector{height:22px;width:1px;background:transparent}
-.children{
-  display:flex;justify-content:center;gap:16px;position:relative;padding-top:22px
-}
-.children>.branch{position:relative}
-.children>.branch .node{position:relative;z-index:2}
-
-/* アコーディオン */
-.collapse-btn{
-  display:block;width:100%;margin-top:7px;padding:5px 7px;
-  font-size:10px;color:var(--gold);background:#10131b;
-  border:1px solid #3a3540;border-radius:5px;min-height:28px
-}
-.collapse-btn:hover{background:#292332;border-color:var(--gold)}
-
-.status{font-size:11px;color:var(--gold);min-height:16px;margin-top:8px}
-.meta-info{
-  color:var(--muted);font-size:11px;margin-top:6px;
-  display:flex;justify-content:space-between;align-items:center
-}
-
-@media(max-width:600px){
-  body{padding:8px}
-  h1{font-size:16px}
-  .canvas{padding:8px;min-height:300px}
-  .tree{padding:15px}
-  .children{gap:10px}
-  .node{min-width:120px;max-width:170px;padding:8px}
-  .node strong{font-size:12px}
-  .node small{font-size:10px}
-  button,select{padding:7px 9px;font-size:12px}
-}
-
-@media print{
-  body{background:#fff;color:#000}
-  .no-print,.modal-overlay{display:none!important}
-  .canvas{max-height:none;overflow:visible;border:0;background:white}
-  .tree{zoom:1!important}
-  .node{background:white;color:black;box-shadow:none;border-color:#333}
-  .node strong{color:black}
-  .node small{color:#333}
-  .role-badge{print-color-adjust:exact}
-}
+  .connector { height: 24px; width: 1px; }
+  .children {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    position: relative;
+    padding-top: 24px;
+  }
+  /* アコーディオンボタン */
+  .collapse-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin-top: 8px;
+    padding: 6px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--gold);
+    background: #10121a;
+    border: 1px solid #383542;
+    border-radius: 8px;
+  }
+  /* ボトムシート（編集パネル） */
+  .bottom-sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #141722;
+    border-top: 1px solid #32384a;
+    border-radius: 20px 20px 0 0;
+    z-index: 40;
+    transform: translateY(100%);
+    transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.8);
+    max-height: 85dvh;
+    display: flex;
+    flex-direction: column;
+  }
+  .bottom-sheet.open {
+    transform: translateY(0);
+  }
+  .sheet-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 35;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .sheet-backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  /* カラーピッカー */
+  .color-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    transition: transform 0.12s;
+  }
+  .color-btn.active {
+    border-color: #fff;
+    transform: scale(1.15);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+  }
+  /* カスタムダイアログ（alert/confirm代替） */
+  .dialog-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    z-index: 100;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .dialog-overlay.open {
+    display: flex;
+  }
 </style>
 </head>
-
 <body>
-<div class="app">
 
-<header>
-  <div>
-    <h1>架空組織図メーカー【任侠編】</h1>
-    <div class="sub">スマホ対応 / 自動保存 / アコーディオン</div>
+  <!-- トップバー：コンパクト設計 -->
+  <header class="bg-[#12141d] border-b border-[#282d3d] px-3 py-2.5 flex items-center justify-between gap-2 shrink-0 z-20">
+    <div class="flex items-center gap-2 flex-1 min-w-0">
+      <span class="text-[#d4af37] font-ninkyo font-black text-base tracking-wider shrink-0">任侠図</span>
+      <select id="orgSelect" class="bg-[#1c202e] text-white text-sm font-semibold rounded-lg px-2.5 py-2 border border-[#32384c] flex-1 min-w-0 truncate focus:outline-none focus:border-[#d4af37]"></select>
+    </div>
+    <div class="flex items-center gap-1.5 shrink-0">
+      <button id="btnSaveExplicit" class="bg-[#d4af37] active:bg-[#b8952b] text-[#0b0c10] font-bold text-xs px-3 py-2 rounded-lg flex items-center gap-1 shadow">
+        <span>💾</span><span>保存</span>
+      </button>
+      <button id="btnMenu" class="bg-[#1e2230] active:bg-[#2a3042] text-gray-200 border border-[#32384c] text-xs font-semibold px-2.5 py-2 rounded-lg">
+        設定 ☰
+      </button>
+    </div>
+  </header>
+
+  <!-- サブステータスバー（総勢・ズーム・保存状態） -->
+  <div class="bg-[#0e1017] border-b border-[#222634] px-3 py-1.5 flex items-center justify-between text-xs shrink-0 z-10">
+    <div class="flex items-center gap-2">
+      <span id="countBadge" class="text-[#d4af37] font-bold">総勢 1名</span>
+      <span id="saveIndicator" class="text-[11px] text-gray-400">準備完了</span>
+    </div>
+    <div class="flex items-center gap-1">
+      <button id="zoomOut" class="bg-[#1a1d28] border border-[#2c3140] text-gray-300 w-7 h-7 rounded-md flex items-center justify-center font-bold">−</button>
+      <button id="zoomReset" class="bg-[#1a1d28] border border-[#2c3140] text-gray-300 px-2 h-7 rounded-md text-[11px] font-mono">100%</button>
+      <button id="zoomIn" class="bg-[#1a1d28] border border-[#2c3140] text-gray-300 w-7 h-7 rounded-md flex items-center justify-center font-bold">＋</button>
+    </div>
   </div>
 
-  <div class="toolbar no-print" style="margin:0;border:0;padding:0;background:transparent">
-    <button id="sample">サンプル読込</button>
-    <button id="saveJson">JSON保存</button>
-    <button id="loadJson">JSON読込</button>
-    <button id="print">印刷</button>
-    <input id="file" type="file" accept=".json,application/json" hidden>
-  </div>
-</header>
+  <!-- メインキャンバス（画面の大部分を占有） -->
+  <main class="canvas-area" id="mainCanvas">
+    <div class="tree" id="tree"></div>
+  </main>
 
-<div class="org-switcher no-print">
-  <span style="color:var(--gold);font-weight:bold;white-space:nowrap">組織：</span>
-  <select id="orgSelect" style="flex:1;min-width:130px"></select>
-  <button id="newOrg" class="primary">新規</button>
-  <button id="renameOrg">名前変更</button>
-  <button id="deleteOrg" class="danger">削除</button>
-</div>
+  <!-- 下部固定アクションバー（片手親指操作エリア） -->
+  <footer class="fixed bottom-3 left-3 right-3 bg-[#161924]/95 backdrop-blur-md border border-[#33394d] rounded-2xl p-2 shadow-2xl z-30 flex items-center justify-between gap-1.5">
+    <button id="btnOpenEdit" class="flex-1 bg-[#252a3b] active:bg-[#32394f] text-white border border-[#3f465e] py-2.5 px-2 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-0.5">
+      <span class="text-sm">✏️</span>
+      <span>選択を編集</span>
+    </button>
+    <button id="addChild" class="flex-1 bg-[#c0392b] active:bg-[#a93226] text-white py-2.5 px-2 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-0.5 shadow">
+      <span class="text-sm">＋</span>
+      <span>子分追加</span>
+    </button>
+    <button id="addSibling" class="flex-1 bg-[#1e2230] active:bg-[#2a3042] text-gray-200 border border-[#32384c] py-2.5 px-2 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-0.5">
+      <span class="text-sm">👥</span>
+      <span>同格追加</span>
+    </button>
+    <button id="deleteNode" class="bg-[#261619] active:bg-[#3b1e23] text-[#ff7b7b] border border-[#54262b] py-2.5 px-3 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-0.5 disabled:opacity-30">
+      <span class="text-sm">🗑️</span>
+      <span>破門</span>
+    </button>
+  </footer>
 
-<div class="layout">
-  <div class="toolbar no-print">
-    <button class="primary" id="addChild">＋ 子分追加</button>
-    <button id="addSibling">＋ 同格追加</button>
-    <button class="danger" id="delete">破門・削除</button>
-  </div>
+  <!-- ボトムシート背景 -->
+  <div id="sheetBackdrop" class="sheet-backdrop"></div>
 
-  <aside class="panel sidebar no-print">
-    <h3 style="margin:0 0 6px;font-size:14px;color:var(--gold)">構成員の編集</h3>
-
-    <div style="font-size:12px;color:var(--muted);background:#0f1117;padding:6px 8px;border-radius:4px;border:1px solid var(--border)" id="selectedLabel">選択：なし</div>
-
-    <label for="nodeRole">役職・盃</label>
-    <input id="nodeRole" maxlength="50" placeholder="若頭">
-
-    <label>役職バッジの色</label>
-    <div class="color-picker" id="colorPicker">
-      <button type="button" class="color-btn" data-color="gold" style="background:#d4af37" title="金"></button>
-      <button type="button" class="color-btn" data-color="crimson" style="background:#c0392b" title="赤"></button>
-      <button type="button" class="color-btn" data-color="purple" style="background:#8e44ad" title="紫"></button>
-      <button type="button" class="color-btn" data-color="blue" style="background:#2980b9" title="青"></button>
-      <button type="button" class="color-btn" data-color="green" style="background:#27ae60" title="緑"></button>
-      <button type="button" class="color-btn" data-color="gray" style="background:#4b6584" title="灰"></button>
+  <!-- 構成員編集ボトムシート -->
+  <section id="editSheet" class="bottom-sheet">
+    <div class="px-4 py-3 border-b border-[#282d3d] flex items-center justify-between">
+      <div>
+        <span class="text-xs text-[#d4af37] font-bold block">構成員の編集</span>
+        <span id="selectedLabel" class="text-xs text-gray-400">選択中</span>
+      </div>
+      <button id="btnCloseEdit" class="bg-[#232736] text-gray-300 px-3 py-1.5 rounded-lg text-xs font-bold">閉じる ✕</button>
     </div>
 
-    <label for="nodeName">氏名・団体名</label>
-    <input id="nodeName" maxlength="50" placeholder="氏名または組織名">
+    <div class="p-4 overflow-y-auto space-y-3.5">
+      <div>
+        <label class="block text-xs font-bold text-[#d4af37] mb-1">役職・盃</label>
+        <input id="nodeRole" type="text" maxlength="40" placeholder="例：若頭 / 舎弟頭" class="w-full bg-[#0d0f15] border border-[#2c3140] rounded-xl px-3.5 py-2.5 text-white text-base focus:outline-none focus:border-[#d4af37]">
+      </div>
 
-    <label for="nodeDept">縄張り・シノギ・備考</label>
-    <input id="nodeDept" maxlength="80" placeholder="例：歓楽街">
+      <div>
+        <label class="block text-xs font-bold text-[#d4af37] mb-1.5">役職バッジの色</label>
+        <div class="flex items-center justify-between gap-2 bg-[#0d0f15] p-2.5 rounded-xl border border-[#2c3140]" id="colorPicker">
+          <button type="button" class="color-btn" data-color="gold" style="background:#d4af37" aria-label="金"></button>
+          <button type="button" class="color-btn" data-color="crimson" style="background:#c0392b" aria-label="赤"></button>
+          <button type="button" class="color-btn" data-color="purple" style="background:#8e44ad" aria-label="紫"></button>
+          <button type="button" class="color-btn" data-color="blue" style="background:#2980b9" aria-label="青"></button>
+          <button type="button" class="color-btn" data-color="green" style="background:#27ae60" aria-label="緑"></button>
+          <button type="button" class="color-btn" data-color="gray" style="background:#4b6584" aria-label="灰"></button>
+        </div>
+      </div>
 
-    <button class="primary" id="apply" style="width:100%;margin-top:12px;padding:10px">変更を反映する</button>
-    <div class="status" id="status"></div>
-  </aside>
+      <div>
+        <label class="block text-xs font-bold text-[#d4af37] mb-1">氏名・団体名</label>
+        <input id="nodeName" type="text" maxlength="40" placeholder="例：黒鉄 厳蔵" class="w-full bg-[#0d0f15] border border-[#2c3140] rounded-xl px-3.5 py-2.5 text-white text-base focus:outline-none focus:border-[#d4af37]">
+      </div>
 
-  <div class="canvas-wrap">
-    <div class="canvas-header">
-      <span id="count">総勢 1名</span>
-      <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">
-        <button id="zoomOut" style="padding:4px 8px;font-size:12px">−</button>
-        <button id="zoomReset" style="padding:4px 8px;font-size:12px">100%</button>
-        <button id="zoomIn" style="padding:4px 8px;font-size:12px">＋</button>
-        <button id="expandModal" style="font-size:11px;padding:4px 8px;background:#222;color:var(--gold);border:1px solid var(--gold);margin-left:4px">🔍 全画面で見る</button>
+      <div>
+        <label class="block text-xs font-bold text-[#d4af37] mb-1">縄張り・シノギ・備考</label>
+        <input id="nodeDept" type="text" maxlength="60" placeholder="例：神室町・金融フロント" class="w-full bg-[#0d0f15] border border-[#2c3140] rounded-xl px-3.5 py-2.5 text-white text-base focus:outline-none focus:border-[#d4af37]">
+      </div>
+
+      <div class="pt-2 pb-4">
+        <button id="applyEdit" class="w-full bg-[#c0392b] active:bg-[#a93226] text-white font-bold py-3.5 rounded-xl text-sm shadow-lg">
+          変更を反映して保存
+        </button>
       </div>
     </div>
+  </section>
 
-    <div class="canvas" id="mainCanvas">
-      <div class="tree" id="tree"></div>
+  <!-- 組織管理・セーブメニューシート -->
+  <section id="menuSheet" class="bottom-sheet">
+    <div class="px-4 py-3 border-b border-[#282d3d] flex items-center justify-between">
+      <span class="text-sm text-[#d4af37] font-bold">組織管理・データ保存</span>
+      <button id="btnCloseMenu" class="bg-[#232736] text-gray-300 px-3 py-1.5 rounded-lg text-xs font-bold">閉じる ✕</button>
     </div>
 
-    <div class="meta-info">
-      <span style="font-size:10px;color:var(--muted)">カード選択で編集・色変更 / ＋−で傘下を開閉</span>
+    <div class="p-4 overflow-y-auto space-y-4">
+      <!-- 組織操作 -->
+      <div class="space-y-2">
+        <div class="text-xs font-bold text-gray-400">現在の組織の操作</div>
+        <div class="grid grid-cols-3 gap-2">
+          <button id="newOrg" class="bg-[#1e2230] border border-[#32384c] text-white py-2.5 rounded-xl text-xs font-bold">＋ 新規組織</button>
+          <button id="renameOrg" class="bg-[#1e2230] border border-[#32384c] text-white py-2.5 rounded-xl text-xs font-bold">名前変更</button>
+          <button id="deleteOrg" class="bg-[#261619] border border-[#54262b] text-[#ff7b7b] py-2.5 rounded-xl text-xs font-bold">組織削除</button>
+        </div>
+      </div>
+
+      <!-- セーブスロット（ブラウザ/クラウド保存） -->
+      <div class="space-y-2">
+        <div class="text-xs font-bold text-gray-400">データバックアップ・読込</div>
+        <div class="grid grid-cols-2 gap-2">
+          <button id="saveJson" class="bg-[#1e2230] border border-[#32384c] text-white py-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5">
+            <span>📥</span><span>ファイルに保存 (JSON)</span>
+          </button>
+          <button id="loadJson" class="bg-[#1e2230] border border-[#32384c] text-white py-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5">
+            <span>📤</span><span>ファイルから読込</span>
+          </button>
+          <input id="fileInput" type="file" accept=".json,application/json" hidden>
+        </div>
+      </div>
+
+      <!-- サンプル復元 -->
+      <div class="pt-2 border-t border-[#282d3d]">
+        <button id="loadSample" class="w-full bg-[#181b26] border border-[#2c3140] text-gray-300 py-3 rounded-xl text-xs font-bold">
+          サンプル組織（二代目黒鉄組）を読み込む
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- カスタムダイアログ（alert / confirm / prompt 代替） -->
+  <div id="customDialog" class="dialog-overlay">
+    <div class="bg-[#181b26] border border-[#363c52] rounded-2xl p-5 w-full max-w-sm shadow-2xl space-y-4">
+      <h3 id="dialogTitle" class="text-base font-bold text-[#d4af37]">確認</h3>
+      <p id="dialogMessage" class="text-sm text-gray-200 leading-relaxed"></p>
+      <input id="dialogInput" type="text" class="hidden w-full bg-[#0d0f15] border border-[#32384c] rounded-xl px-3.5 py-2.5 text-white text-base focus:outline-none focus:border-[#d4af37]">
+      <div class="flex justify-end gap-2 pt-1">
+        <button id="dialogCancel" class="px-4 py-2.5 rounded-xl bg-[#252a3b] text-gray-300 text-xs font-bold">キャンセル</button>
+        <button id="dialogOk" class="px-4 py-2.5 rounded-xl bg-[#c0392b] text-white text-xs font-bold">OK</button>
+      </div>
     </div>
   </div>
-</div>
-</div>
 
-<!-- 全画面モード -->
-<div class="modal-overlay" id="modalOverlay">
-  <div class="modal-header">
-    <span style="font-size:13px;color:var(--gold);font-weight:bold">◆ 全画面表示 ◆</span>
-    <div class="modal-zoom-controls">
-      <button id="modalZoomOut">縮小 −</button>
-      <button id="modalZoomReset">100%</button>
-      <button id="modalZoomIn">拡大 ＋</button>
-      <button id="closeModal" style="background:var(--crimson);color:#fff;border:0;font-weight:bold;margin-left:6px">閉じる ✕</button>
-    </div>
+  <!-- トースト通知 -->
+  <div id="toast" class="fixed top-14 left-1/2 -translate-x-1/2 bg-[#1f2433] border border-[#d4af37] text-white text-xs font-bold px-4 py-2 rounded-full shadow-xl opacity-0 pointer-events-none transition-opacity duration-200 z-50 whitespace-nowrap">
+    保存しました
   </div>
-  <div class="modal-body" id="modalBody">
-    <div class="tree" id="modalTree"></div>
-  </div>
-</div>
 
-<script>
-(()=>{
-const $=id=>document.getElementById(id);
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-const STORAGE_KEY_LIST="yakuza_org_list_v6";
-const STORAGE_PREFIX="yakuza_org_data_v6";
+// --- Firebase 初期化 ---
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'yakuza-org-mobile';
+let db = null;
+let auth = null;
+let currentUser = null;
 
-const defaultOrgId="org_default_1";
-const defaultOrgName="二代目黒鉄組（サンプル）";
+async function initFirebase() {
+  if (typeof __firebase_config === 'undefined') return;
+  try {
+    const firebaseConfig = JSON.parse(__firebase_config);
+    const app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
 
-const defaultRoot={
-  id:1,
-  name:"黒鉄 厳蔵",
-  role:"二代目黒鉄組 組長",
-  dept:"総本部（神室町）",
-  badgeColor:"gold",
-  children:[
+    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+      await signInWithCustomToken(auth, __initial_auth_token);
+    } else {
+      await signInAnonymously(auth);
+    }
+
+    onAuthStateChanged(auth, async (user) => {
+      currentUser = user;
+      if (user) {
+        await loadFromCloud();
+      }
+    });
+  } catch (err) {
+    console.warn("Cloud sync unavailable:", err);
+  }
+}
+
+// --- 状態管理 ---
+const $ = id => document.getElementById(id);
+
+const defaultOrgId = "org_default_1";
+const defaultOrgName = "二代目黒鉄組（サンプル）";
+
+const defaultRoot = {
+  id: 1,
+  name: "黒鉄 厳蔵",
+  role: "二代目黒鉄組 組長",
+  dept: "総本部（神室町）",
+  badgeColor: "gold",
+  children: [
     {
-      id:2,name:"陣内 宗介",role:"若頭 / 陣内組",
-      dept:"執行部・港湾利権",badgeColor:"crimson",
-      children:[
-        {id:5,name:"冴島 剛",role:"若頭補佐",dept:"武闘派",badgeColor:"blue",children:[]},
-        {id:6,name:"氷室 怜司",role:"若頭補佐",dept:"金融・フロント",badgeColor:"blue",children:[]}
+      id: 2,
+      name: "陣内 宗介",
+      role: "若頭 / 陣内組",
+      dept: "執行部・港湾利権",
+      badgeColor: "crimson",
+      children: [
+        { id: 5, name: "冴島 剛", role: "若頭補佐", dept: "武闘派", badgeColor: "blue", children: [] },
+        { id: 6, name: "氷室 怜司", role: "若頭補佐", dept: "金融・フロント", badgeColor: "blue", children: [] }
       ]
     },
     {
-      id:3,name:"九条 勝",role:"舎弟頭",dept:"渉外担当",
-      badgeColor:"purple",children:[]
+      id: 3,
+      name: "九条 勝",
+      role: "舎弟頭",
+      dept: "渉外担当",
+      badgeColor: "purple",
+      children: []
     }
   ]
 };
 
-let orgList=[];
-let currentOrgId=defaultOrgId;
-let root=JSON.parse(JSON.stringify(defaultRoot));
-let selected=1;
-let selectedColor="gold";
-let nextId=7;
-let zoom=1;
-let modalZoom=1;
-let collapsed=new Set();
+// インメモリデータストア（全組織データを保持）
+let orgStore = {
+  [defaultOrgId]: {
+    name: defaultOrgName,
+    root: JSON.parse(JSON.stringify(defaultRoot)),
+    nextId: 7,
+    collapsed: []
+  }
+};
 
-function flatten(n){
-  return [n,...(n.children||[]).flatMap(flatten)];
+let currentOrgId = defaultOrgId;
+let root = orgStore[defaultOrgId].root;
+let selected = 1;
+let selectedColor = "gold";
+let nextId = 7;
+let zoom = 1;
+let collapsed = new Set();
+
+// --- トースト＆ステータス表示 ---
+let toastTimer = null;
+function showToast(msg) {
+  const el = $("toast");
+  el.textContent = msg;
+  el.classList.remove("opacity-0");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.add("opacity-0"), 2200);
 }
 
-function find(n,id){
-  if(n.id===id)return n;
-  for(const c of (n.children||[])){
-    const r=find(c,id);
-    if(r)return r;
+function setSaveStatus(text, isSaved = true) {
+  const el = $("saveIndicator");
+  el.textContent = text;
+  el.className = isSaved ? "text-[11px] text-emerald-400" : "text-[11px] text-amber-400";
+}
+
+// --- カスタムダイアログ ---
+function showDialog({ title, message, type = "confirm", defaultValue = "" }) {
+  return new Promise((resolve) => {
+    const overlay = $("customDialog");
+    const input = $("dialogInput");
+    const cancelBtn = $("dialogCancel");
+    const okBtn = $("dialogOk");
+
+    $("dialogTitle").textContent = title;
+    $("dialogMessage").textContent = message;
+
+    if (type === "prompt") {
+      input.classList.remove("hidden");
+      input.value = defaultValue;
+    } else {
+      input.classList.add("hidden");
+    }
+
+    cancelBtn.style.display = type === "alert" ? "none" : "inline-block";
+    overlay.classList.add("open");
+
+    if (type === "prompt") {
+      setTimeout(() => { input.focus(); input.select(); }, 50);
+    }
+
+    const cleanup = () => {
+      overlay.classList.remove("open");
+      cancelBtn.onclick = null;
+      okBtn.onclick = null;
+    };
+
+    cancelBtn.onclick = () => { cleanup(); resolve(null); };
+    okBtn.onclick = () => {
+      const val = type === "prompt" ? input.value : true;
+      cleanup();
+      resolve(val);
+    };
+  });
+}
+
+// --- クラウド保存・読込（Firestore） ---
+async function saveToCloud(explicit = false) {
+  // 現在のメモリ状態をストアに同期
+  orgStore[currentOrgId] = {
+    name: orgStore[currentOrgId]?.name || "名称未設定組織",
+    root: JSON.parse(JSON.stringify(root)),
+    nextId,
+    collapsed: [...collapsed]
+  };
+
+  setSaveStatus("保存中...", false);
+
+  if (!db || !currentUser) {
+    setSaveStatus("一時保存済み", true);
+    if (explicit) showToast("現在のデータを保存しました");
+    return;
+  }
+
+  try {
+    const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'yakuza_orgs', 'workspace');
+    // 配列のネストエラーを防ぐためJSON文字列でシリアライズして保存
+    await setDoc(docRef, {
+      payload: JSON.stringify({ currentOrgId, orgStore }),
+      updatedAt: Date.now()
+    });
+    const now = new Date();
+    const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    setSaveStatus(`保存済 (${timeStr})`, true);
+    if (explicit) showToast("クラウドにセーブしました");
+  } catch (err) {
+    console.error("Save error:", err);
+    setSaveStatus("保存エラー", false);
+    if (explicit) showToast("保存に失敗しました");
+  }
+}
+
+async function loadFromCloud() {
+  if (!db || !currentUser) return;
+  try {
+    const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'yakuza_orgs', 'workspace');
+    const snap = await getDoc(docRef);
+    if (snap.exists() && snap.data().payload) {
+      const parsed = JSON.parse(snap.data().payload);
+      if (parsed.orgStore && Object.keys(parsed.orgStore).length > 0) {
+        orgStore = parsed.orgStore;
+        currentOrgId = orgStore[parsed.currentOrgId] ? parsed.currentOrgId : Object.keys(orgStore)[0];
+        switchOrg(currentOrgId, false);
+        setSaveStatus("データ復元済", true);
+      }
+    } else {
+      // 初回ログイン時は現在のデータを保存
+      await saveToCloud(false);
+    }
+  } catch (err) {
+    console.warn("Load error:", err);
+  }
+}
+
+// --- ツリー操作ユーティリティ ---
+function flatten(n) {
+  return [n, ...(n.children || []).flatMap(flatten)];
+}
+
+function find(n, id) {
+  if (n.id === id) return n;
+  for (const c of (n.children || [])) {
+    const r = find(c, id);
+    if (r) return r;
   }
   return null;
 }
 
-function parent(n,id){
-  for(const c of (n.children||[])){
-    if(c.id===id)return n;
-    const r=parent(c,id);
-    if(r)return r;
+function parent(n, id) {
+  for (const c of (n.children || [])) {
+    if (c.id === id) return n;
+    const r = parent(c, id);
+    if (r) return r;
   }
   return null;
 }
 
-function status(s){$("status").textContent=s;}
-
-function saveOrgList(){
-  localStorage.setItem(STORAGE_KEY_LIST,JSON.stringify(orgList));
-}
-
-function saveCurrentOrgData(){
-  localStorage.setItem(STORAGE_PREFIX+currentOrgId,JSON.stringify({
-    root,nextId,collapsed:[...collapsed]
-  }));
-}
-
-function updateOrgSelectUI(){
-  const sel=$("orgSelect");
+function updateOrgSelectUI() {
+  const sel = $("orgSelect");
   sel.replaceChildren();
-  orgList.forEach(org=>{
-    const opt=document.createElement("option");
-    opt.value=org.id;
-    opt.textContent=org.name;
-    opt.selected=org.id===currentOrgId;
+  Object.entries(orgStore).forEach(([id, data]) => {
+    const opt = document.createElement("option");
+    opt.value = id;
+    opt.textContent = data.name;
+    opt.selected = id === currentOrgId;
     sel.append(opt);
   });
 }
 
-function initStorage(){
-  try{
-    const saved=localStorage.getItem(STORAGE_KEY_LIST);
-    if(saved)orgList=JSON.parse(saved);
-  }catch(e){orgList=[];}
-
-  if(!orgList.length){
-    orgList=[{id:defaultOrgId,name:defaultOrgName}];
-    localStorage.setItem(STORAGE_KEY_LIST,JSON.stringify(orgList));
-    localStorage.setItem(STORAGE_PREFIX+defaultOrgId,JSON.stringify({
-      root:defaultRoot,nextId:7,collapsed:[]
-    }));
-  }
-
-  currentOrgId=orgList[0].id;
-  loadOrgData(currentOrgId);
-}
-
-function loadOrgData(id){
-  currentOrgId=id;
-  collapsed.clear();
-
-  const raw=localStorage.getItem(STORAGE_PREFIX+id);
-
-  if(raw){
-    try{
-      const data=JSON.parse(raw);
-      root=data.root||data;
-      nextId=data.nextId||Math.max(...flatten(root).map(n=>Number(n.id)||0))+1;
-      collapsed=new Set(data.collapsed||[]);
-    }catch(e){
-      root=JSON.parse(JSON.stringify(defaultRoot));
-      nextId=7;
-      collapsed.clear();
-    }
-  }else{
-    root={id:1,name:"新・組長",role:"組長",dept:"本家",badgeColor:"gold",children:[]};
-    nextId=2;
-  }
-
-  selected=root.id;
+function switchOrg(id, autoSave = true) {
+  if (!orgStore[id]) return;
+  currentOrgId = id;
+  const data = orgStore[id];
+  root = JSON.parse(JSON.stringify(data.root));
+  nextId = data.nextId || Math.max(...flatten(root).map(n => Number(n.id) || 0)) + 1;
+  collapsed = new Set(data.collapsed || []);
+  selected = root.id;
   updateOrgSelectUI();
-  sync();
+  syncForm();
   draw();
+  if (autoSave) saveToCloud(false);
 }
 
-function updateColorPickerUI(color){
-  selectedColor=color;
-  document.querySelectorAll(".color-btn").forEach(btn=>{
-    btn.classList.toggle("active",btn.dataset.color===color);
+// --- 編集シート制御 ---
+function openSheet(sheetId) {
+  closeAllSheets();
+  $("sheetBackdrop").classList.add("open");
+  $(sheetId).classList.add("open");
+}
+
+function closeAllSheets() {
+  $("sheetBackdrop").classList.remove("open");
+  $("editSheet").classList.remove("open");
+  $("menuSheet").classList.remove("open");
+}
+
+$("sheetBackdrop").onclick = closeAllSheets;
+$("btnCloseEdit").onclick = closeAllSheets;
+$("btnCloseMenu").onclick = closeAllSheets;
+
+$("btnOpenEdit").onclick = () => {
+  syncForm();
+  openSheet("editSheet");
+};
+
+$("btnMenu").onclick = () => openSheet("menuSheet");
+
+// --- フォーム同期 ---
+function updateColorPickerUI(color) {
+  selectedColor = color;
+  document.querySelectorAll(".color-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.color === color);
   });
 }
 
-document.querySelectorAll(".color-btn").forEach(btn=>{
-  btn.onclick=()=>updateColorPickerUI(btn.dataset.color);
+document.querySelectorAll(".color-btn").forEach(btn => {
+  btn.onclick = () => updateColorPickerUI(btn.dataset.color);
 });
 
-function sync(){
-  const n=find(root,selected)||root;
-  selected=n.id;
+function syncForm() {
+  const n = find(root, selected) || root;
+  selected = n.id;
 
-  $("nodeName").value=n.name||"";
-  $("nodeRole").value=n.role||"";
-  $("nodeDept").value=n.dept||"";
+  $("nodeName").value = n.name || "";
+  $("nodeRole").value = n.role || "";
+  $("nodeDept").value = n.dept || "";
 
-  updateColorPickerUI(n.badgeColor||(n.id===root.id?"gold":"crimson"));
-  $("selectedLabel").textContent="選択："+n.name+"（"+(n.role||"役職なし")+"）";
-  $("delete").disabled=n.id===root.id;
+  updateColorPickerUI(n.badgeColor || (n.id === root.id ? "gold" : "crimson"));
+  $("selectedLabel").textContent = `${n.name}（${n.role || "役職なし"}）`;
+  $("deleteNode").disabled = n.id === root.id;
 }
 
-/* 組織カード */
-function render(n,isRoot=false){
-  const branch=document.createElement("div");
-  branch.className="branch";
-  branch.dataset.id=n.id;
+// --- 組織図描画 ---
+function renderNode(n, isRoot = false) {
+  const branch = document.createElement("div");
+  branch.className = "branch";
+  branch.dataset.id = n.id;
 
-  const card=document.createElement("div");
-  card.className="node"+(isRoot?" root-node":"")+(n.id===selected?" selected":"");
-  card.tabIndex=0;
+  const card = document.createElement("div");
+  card.className = "node" + (isRoot ? " root-node" : "") + (n.id === selected ? " selected" : "");
 
-  if(n.role){
-    const role=document.createElement("div");
-    role.className="role-badge badge-"+(n.badgeColor||(isRoot?"gold":"crimson"));
-    role.textContent=n.role;
+  if (n.role) {
+    const role = document.createElement("div");
+    role.className = "role-badge badge-" + (n.badgeColor || (isRoot ? "gold" : "crimson"));
+    role.textContent = n.role;
     card.append(role);
   }
 
-  const name=document.createElement("strong");
-  name.textContent=n.name||"名称未設定";
+  const name = document.createElement("div");
+  name.className = "font-bold text-sm text-white leading-tight break-all";
+  name.textContent = n.name || "名称未設定";
   card.append(name);
 
-  if(n.dept){
-    const dept=document.createElement("small");
-    dept.textContent=n.dept;
+  if (n.dept) {
+    const dept = document.createElement("div");
+    dept.className = "text-[11px] text-gray-400 mt-1.5 pt-1 border-t border-dashed border-[#343a4d] break-all leading-tight";
+    dept.textContent = n.dept;
     card.append(dept);
   }
 
-  const descendantCount=(n.children||[]).reduce((sum,c)=>sum+flatten(c).length,0);
+  const descendantCount = (n.children || []).reduce((sum, c) => sum + flatten(c).length, 0);
 
-  if(n.children&&n.children.length){
-    const toggle=document.createElement("button");
-    toggle.className="collapse-btn";
-    toggle.type="button";
-    const closed=collapsed.has(n.id);
+  if (n.children && n.children.length) {
+    const toggle = document.createElement("button");
+    toggle.className = "collapse-btn";
+    toggle.type = "button";
+    const closed = collapsed.has(n.id);
+    toggle.textContent = (closed ? "＋ 展開 (" : "− 畳む (") + descendantCount + "名)";
 
-    toggle.textContent=(closed?"＋":"−")+" 傘下 "+descendantCount+"人";
-
-    toggle.onclick=e=>{
+    toggle.onclick = e => {
       e.stopPropagation();
-      if(collapsed.has(n.id))collapsed.delete(n.id);
+      if (collapsed.has(n.id)) collapsed.delete(n.id);
       else collapsed.add(n.id);
       draw();
+      saveToCloud(false);
     };
     card.append(toggle);
   }
 
-  card.onclick=e=>{
+  // カードタップで選択（すでに選択済みのカードをもう一度タップしたら編集シートを開く）
+  card.onclick = e => {
     e.stopPropagation();
-    selected=n.id;
-    sync();
-    draw();
+    if (selected === n.id) {
+      syncForm();
+      openSheet("editSheet");
+    } else {
+      selected = n.id;
+      syncForm();
+      draw();
+    }
   };
 
   branch.append(card);
 
-  if(n.children&&n.children.length&&!collapsed.has(n.id)){
-    const line=document.createElement("div");
-    line.className="connector";
+  if (n.children && n.children.length && !collapsed.has(n.id)) {
+    const line = document.createElement("div");
+    line.className = "connector";
     branch.append(line);
 
-    const kids=document.createElement("div");
-    kids.className="children";
-
-    n.children.forEach(c=>kids.append(render(c,false)));
+    const kids = document.createElement("div");
+    kids.className = "children";
+    n.children.forEach(c => kids.append(renderNode(c, false)));
     branch.append(kids);
   }
 
   return branch;
 }
 
-/* SVGで正確な接続線を描く */
-function drawLines(treeElement,currentZoom){
-  const old=treeElement.querySelector(".tree-lines");
-  if(old)old.remove();
+function drawLines(treeElement, currentZoom) {
+  const old = treeElement.querySelector(".tree-lines");
+  if (old) old.remove();
 
-  const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.classList.add("tree-lines");
 
-  const treeRect=treeElement.getBoundingClientRect();
-  const width=Math.max(treeElement.scrollWidth,1);
-  const height=Math.max(treeElement.scrollHeight,1);
+  const treeRect = treeElement.getBoundingClientRect();
+  const width = Math.max(treeElement.scrollWidth, 1);
+  const height = Math.max(treeElement.scrollHeight, 1);
 
-  svg.setAttribute("width",width);
-  svg.setAttribute("height",height);
-  svg.setAttribute("viewBox",`0 0 ${width} ${height}`);
+  svg.setAttribute("width", width);
+  svg.setAttribute("height", height);
+  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
 
-  const branches=treeElement.querySelectorAll(".branch");
+  const branches = treeElement.querySelectorAll(".branch");
 
-  branches.forEach(branch=>{
-    const childrenBox=branch.querySelector(":scope > .children");
-    if(!childrenBox)return;
+  branches.forEach(branch => {
+    const childrenBox = branch.querySelector(":scope > .children");
+    if (!childrenBox) return;
 
-    const parentNode=branch.querySelector(":scope > .node");
-    if(!parentNode)return;
+    const parentNode = branch.querySelector(":scope > .node");
+    if (!parentNode) return;
 
-    const childBranches=childrenBox.querySelectorAll(":scope > .branch");
-    if(!childBranches.length)return;
+    const childBranches = childrenBox.querySelectorAll(":scope > .branch");
+    if (!childBranches.length) return;
 
-    const p=parentNode.getBoundingClientRect();
-    const first=childBranches[0].querySelector(":scope > .node")?.getBoundingClientRect();
-    const last=childBranches[childBranches.length-1].querySelector(":scope > .node")?.getBoundingClientRect();
-    if(!first||!last)return;
+    const p = parentNode.getBoundingClientRect();
+    const first = childBranches[0].querySelector(":scope > .node")?.getBoundingClientRect();
+    const last = childBranches[childBranches.length - 1].querySelector(":scope > .node")?.getBoundingClientRect();
+    if (!first || !last) return;
 
-    const scale=currentZoom||1;
-    const px=(p.left+p.width/2-treeRect.left)/scale;
-    const py=(p.bottom-treeRect.top)/scale;
-    const fx=(first.left+first.width/2-treeRect.left)/scale;
-    const fy=(first.top-treeRect.top)/scale;
-    const lx=(last.left+last.width/2-treeRect.left)/scale;
-    const ly=(last.top-treeRect.top)/scale;
+    const scale = currentZoom || 1;
+    const px = (p.left + p.width / 2 - treeRect.left) / scale;
+    const py = (p.bottom - treeRect.top) / scale;
+    const fx = (first.left + first.width / 2 - treeRect.left) / scale;
+    const fy = (first.top - treeRect.top) / scale;
+    const lx = (last.left + last.width / 2 - treeRect.left) / scale;
 
-    const midY=py+(fy-py)/2;
+    const midY = py + (fy - py) / 2;
 
-    function line(x1,y1,x2,y2){
-      const el=document.createElementNS("http://www.w3.org/2000/svg","line");
-      el.setAttribute("x1",x1);
-      el.setAttribute("y1",y1);
-      el.setAttribute("x2",x2);
-      el.setAttribute("y2",y2);
+    function line(x1, y1, x2, y2) {
+      const el = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      el.setAttribute("x1", x1);
+      el.setAttribute("y1", y1);
+      el.setAttribute("x2", x2);
+      el.setAttribute("y2", y2);
       svg.append(el);
     }
 
-    // 親から中央まで
-    line(px,py,px,midY);
+    line(px, py, px, midY);
+    if (childBranches.length > 1) line(fx, midY, lx, midY);
 
-    // 子が複数いる場合の横線
-    if(childBranches.length>1)line(fx,midY,lx,midY);
-
-    // 各子へ接続
-    childBranches.forEach(cb=>{
-      const childNode=cb.querySelector(":scope > .node");
-      if(!childNode)return;
-      const r=childNode.getBoundingClientRect();
-      const cx=(r.left+r.width/2-treeRect.left)/scale;
-      const cy=(r.top-treeRect.top)/scale;
-      line(cx,midY,cx,cy);
+    childBranches.forEach(cb => {
+      const childNode = cb.querySelector(":scope > .node");
+      if (!childNode) return;
+      const r = childNode.getBoundingClientRect();
+      const cx = (r.left + r.width / 2 - treeRect.left) / scale;
+      const cy = (r.top - treeRect.top) / scale;
+      line(cx, midY, cx, cy);
     });
   });
 
   treeElement.prepend(svg);
 }
 
-function applyZoom(){
-  $("tree").style.zoom=zoom;
-  $("zoomReset").textContent=Math.round(zoom*100)+"%";
-  $("modalTree").style.zoom=modalZoom;
-  $("modalZoomReset").textContent=Math.round(modalZoom*100)+"%";
-}
+function draw() {
+  const treeEl = $("tree");
+  treeEl.replaceChildren(renderNode(root, true));
+  treeEl.style.zoom = zoom;
+  $("zoomReset").textContent = Math.round(zoom * 100) + "%";
+  $("countBadge").textContent = "総勢 " + flatten(root).length + "名";
 
-function draw(){
-  $("tree").replaceChildren(render(root,true));
-  $("modalTree").replaceChildren(render(root,true));
-  applyZoom();
-
-  $("count").textContent="総勢 "+flatten(root).length+" 名・団体";
-
-  // 描画完了後に位置を測定して線を引く
-  requestAnimationFrame(()=>{
-    drawLines($("tree"),zoom);
-    drawLines($("modalTree"),modalZoom);
+  requestAnimationFrame(() => {
+    drawLines(treeEl, zoom);
   });
-
-  saveCurrentOrgData();
 }
 
-/* 組織切り替え */
-$("orgSelect").onchange=e=>{
-  saveCurrentOrgData();
-  loadOrgData(e.target.value);
-  status("組織を切り替えました");
+// --- イベントリスナー ---
+
+// 明示的セーブボタン
+$("btnSaveExplicit").onclick = () => saveToCloud(true);
+
+// 組織切り替え
+$("orgSelect").onchange = e => {
+  saveToCloud(false);
+  switchOrg(e.target.value, false);
+  showToast("組織を切り替えました");
 };
 
-/* 新規組織 */
-$("newOrg").onclick=()=>{
-  const name=prompt("新しい組織名を入力してください：","白虎会");
-  if(!name||!name.trim())return;
-
-  saveCurrentOrgData();
-  const id="org_"+Date.now();
-  orgList.push({id,name:name.trim()});
-  saveOrgList();
-
-  root={id:1,name:"初代 "+name.trim(),role:"組長",dept:"本家",badgeColor:"gold",children:[]};
-  nextId=2;
-  selected=1;
-  collapsed.clear();
-  currentOrgId=id;
-
-  saveCurrentOrgData();
-  updateOrgSelectUI();
-  sync();
+// ズーム操作
+$("zoomIn").onclick = () => {
+  zoom = Math.min(1.6, +(zoom + 0.1).toFixed(2));
   draw();
-  status("新組織「"+name.trim()+"」を作成しました");
+};
+$("zoomOut").onclick = () => {
+  zoom = Math.max(0.4, +(zoom - 0.1).toFixed(2));
+  draw();
+};
+$("zoomReset").onclick = () => {
+  zoom = 1;
+  draw();
 };
 
-/* 組織名変更 */
-$("renameOrg").onclick=()=>{
-  const org=orgList.find(o=>o.id===currentOrgId);
-  if(!org)return;
+// 子分・同格追加
+function addMember(isSibling) {
+  const current = find(root, selected);
+  const target = isSibling ? parent(root, selected) : current;
 
-  const name=prompt("組織名を変更：",org.name);
-  if(!name||!name.trim())return;
-
-  org.name=name.trim();
-  saveOrgList();
-  updateOrgSelectUI();
-  status("組織名を変更しました");
-};
-
-/* 組織削除 */
-$("deleteOrg").onclick=()=>{
-  if(orgList.length<=1){
-    alert("最後の組織は削除できません。");
+  if (!target) {
+    showToast("本家（トップ）と同格は追加できません");
     return;
   }
 
-  const org=orgList.find(o=>o.id===currentOrgId);
-  if(!org||!confirm("「"+org.name+"」を削除しますか？"))return;
+  // 親が折りたたまれていたら展開する
+  collapsed.delete(target.id);
 
-  localStorage.removeItem(STORAGE_PREFIX+currentOrgId);
-  orgList=orgList.filter(o=>o.id!==currentOrgId);
-  saveOrgList();
-  loadOrgData(orgList[0].id);
-  status("削除しました");
-};
-
-/* ズーム */
-$("zoomIn").onclick=()=>{
-  zoom=Math.min(2.0,+(zoom+.1).toFixed(2));
-  applyZoom();
-  draw();
-};
-$("zoomOut").onclick=()=>{
-  zoom=Math.max(.15,+(zoom-.1).toFixed(2));
-  applyZoom();
-  draw();
-};
-$("zoomReset").onclick=()=>{
-  zoom=1;
-  applyZoom();
-  draw();
-};
-
-$("modalZoomIn").onclick=()=>{
-  modalZoom=Math.min(3.0,+(modalZoom+.15).toFixed(2));
-  applyZoom();
-  draw();
-};
-$("modalZoomOut").onclick=()=>{
-  modalZoom=Math.max(.10,+(modalZoom-.15).toFixed(2));
-  applyZoom();
-  draw();
-};
-$("modalZoomReset").onclick=()=>{
-  modalZoom=1;
-  applyZoom();
-  draw();
-};
-
-/* 全画面 */
-$("expandModal").onclick=()=>{
-  $("modalOverlay").classList.add("active");
-  draw();
-};
-$("closeModal").onclick=()=>{
-  $("modalOverlay").classList.remove("active");
-};
-
-$("mainCanvas").onclick=e=>{
-  if(e.target===$("mainCanvas")) {
-    $("modalOverlay").classList.add("active");
-    draw();
-  }
-};
-
-/* 子分・同格追加 */
-function add(sibling){
-  const current=find(root,selected);
-  const target=sibling?parent(root,selected):current;
-
-  if(!target){
-    status("本家（トップ）と同格は追加できません");
-    return;
-  }
-
-  const n={
-    id:nextId++,
-    name:"新構成員",
-    role:"若衆",
-    dept:"担当・シノギ",
-    badgeColor:"gray",
-    children:[]
+  const newNode = {
+    id: nextId++,
+    name: "新構成員",
+    role: "若衆",
+    dept: "担当・シノギ",
+    badgeColor: "gray",
+    children: []
   };
 
-  target.children.push(n);
-  selected=n.id;
-  sync();
+  target.children.push(newNode);
+  selected = newNode.id;
+  syncForm();
   draw();
-
-  $("nodeName").focus();
-  $("nodeName").select();
-  status("構成員を追加しました");
+  saveToCloud(false);
+  openSheet("editSheet");
+  setTimeout(() => {
+    $("nodeName").focus();
+    $("nodeName").select();
+  }, 150);
 }
-$("addChild").onclick=()=>add(false);
-$("addSibling").onclick=()=>add(true);
 
-/* 編集反映 */
-$("apply").onclick=()=>{
-  const n=find(root,selected);
-  if(!n)return;
+$("addChild").onclick = () => addMember(false);
+$("addSibling").onclick = () => addMember(true);
 
-  n.name=$("nodeName").value.trim()||"名称未設定";
-  n.role=$("nodeRole").value.trim();
-  n.dept=$("nodeDept").value.trim();
-  n.badgeColor=selectedColor;
+// 編集内容を反映
+$("applyEdit").onclick = () => {
+  const n = find(root, selected);
+  if (!n) return;
 
-  sync();
+  n.name = $("nodeName").value.trim() || "名称未設定";
+  n.role = $("nodeRole").value.trim();
+  n.dept = $("nodeDept").value.trim();
+  n.badgeColor = selectedColor;
+
+  syncForm();
   draw();
-  status("保存しました");
+  saveToCloud(true);
+  closeAllSheets();
 };
 
-/* 削除 */
-$("delete").onclick=()=>{
-  if(selected===root.id)return;
-  if(!confirm("この構成員を破門・削除しますか？"))return;
+// 破門・削除
+$("deleteNode").onclick = async () => {
+  if (selected === root.id) return;
+  const target = find(root, selected);
+  const ok = await showDialog({
+    title: "破門・削除の確認",
+    message: `「${target.name}」と配下の組織を削除しますか？`,
+    type: "confirm"
+  });
+  if (!ok) return;
 
-  const p=parent(root,selected);
-  if(!p)return;
+  const p = parent(root, selected);
+  if (!p) return;
 
-  p.children=p.children.filter(n=>n.id!==selected);
-  selected=p.id;
-  sync();
+  p.children = p.children.filter(n => n.id !== selected);
+  selected = p.id;
+  syncForm();
   draw();
-  status("削除しました");
+  saveToCloud(false);
+  showToast("削除しました");
 };
 
-/* サンプル読込 */
-$("sample").onclick=()=>{
-  if(!confirm("サンプル組織で上書きしますか？"))return;
+// 新規組織作成
+$("newOrg").onclick = async () => {
+  closeAllSheets();
+  const name = await showDialog({
+    title: "新規組織の作成",
+    message: "新しい組織名を入力してください。",
+    type: "prompt",
+    defaultValue: "白虎会"
+  });
+  if (!name || !name.trim()) return;
 
-  root=JSON.parse(JSON.stringify(defaultRoot));
-  nextId=7;
-  selected=1;
+  saveToCloud(false);
+  const newId = "org_" + Date.now();
+  orgStore[newId] = {
+    name: name.trim(),
+    root: { id: 1, name: "初代 " + name.trim(), role: "組長", dept: "本家", badgeColor: "gold", children: [] },
+    nextId: 2,
+    collapsed: []
+  };
+  switchOrg(newId, true);
+  showToast(`「${name.trim()}」を作成しました`);
+};
+
+// 組織名変更
+$("renameOrg").onclick = async () => {
+  closeAllSheets();
+  const currentName = orgStore[currentOrgId]?.name || "";
+  const name = await showDialog({
+    title: "組織名の変更",
+    message: "新しい組織名を入力してください。",
+    type: "prompt",
+    defaultValue: currentName
+  });
+  if (!name || !name.trim()) return;
+
+  orgStore[currentOrgId].name = name.trim();
+  updateOrgSelectUI();
+  saveToCloud(true);
+};
+
+// 組織削除
+$("deleteOrg").onclick = async () => {
+  closeAllSheets();
+  if (Object.keys(orgStore).length <= 1) {
+    await showDialog({
+      title: "削除不可",
+      message: "最後の組織は削除できません。",
+      type: "alert"
+    });
+    return;
+  }
+
+  const currentName = orgStore[currentOrgId]?.name || "";
+  const ok = await showDialog({
+    title: "組織の削除",
+    message: `組織「${currentName}」を完全に削除しますか？`,
+    type: "confirm"
+  });
+  if (!ok) return;
+
+  delete orgStore[currentOrgId];
+  const nextOrgId = Object.keys(orgStore)[0];
+  switchOrg(nextOrgId, true);
+  showToast("組織を削除しました");
+};
+
+// サンプル読込
+$("loadSample").onclick = async () => {
+  closeAllSheets();
+  const ok = await showDialog({
+    title: "サンプル読込",
+    message: "現在の組織をサンプルデータ（二代目黒鉄組）で上書きしますか？",
+    type: "confirm"
+  });
+  if (!ok) return;
+
+  root = JSON.parse(JSON.stringify(defaultRoot));
+  nextId = 7;
+  selected = 1;
   collapsed.clear();
-  sync();
+  syncForm();
   draw();
-  status("サンプルを読み込みました");
+  saveToCloud(true);
 };
 
-/* JSON保存 */
-$("saveJson").onclick=()=>{
-  const org=orgList.find(o=>o.id===currentOrgId);
-  const blob=new Blob([JSON.stringify({
-    orgName:org?org.name:"org",
-    root,nextId,collapsed:[...collapsed]
-  },null,2)],{type:"application/json"});
+// JSONファイル保存
+$("saveJson").onclick = () => {
+  closeAllSheets();
+  const orgName = orgStore[currentOrgId]?.name || "yakuza-org";
+  const blob = new Blob([JSON.stringify({
+    orgName,
+    root,
+    nextId,
+    collapsed: [...collapsed]
+  }, null, 2)], { type: "application/json" });
 
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement("a");
-  a.href=url;
-  a.download=(org?org.name:"yakuza")+"-chart.json";
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${orgName}.json`;
   a.click();
   URL.revokeObjectURL(url);
-  status("JSONファイルを保存しました");
+  showToast("JSONファイルをダウンロードしました");
 };
 
-/* JSON読み込み */
-$("loadJson").onclick=()=>$("file").click();
+// JSONファイル読込
+$("loadJson").onclick = () => $("fileInput").click();
 
-$("file").onchange=async e=>{
-  const f=e.target.files[0];
-  if(!f)return;
+$("fileInput").onchange = async e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  closeAllSheets();
 
-  try{
-    const json=JSON.parse(await f.text());
-    const importedRoot=json.root||json;
+  try {
+    const json = JSON.parse(await f.text());
+    const importedRoot = json.root || json;
+    if (!importedRoot || !importedRoot.name) throw new Error("Invalid format");
 
-    if(!importedRoot||!importedRoot.name)throw new Error("invalid");
-
-    root=importedRoot;
-    nextId=json.nextId||Math.max(...flatten(root).map(n=>Number(n.id)||0))+1;
-    selected=root.id;
-
-    collapsed=new Set(json.collapsed||[]);
-
-    const newId="org_"+Date.now();
-    const name=json.orgName||f.name.replace(/\.[^/.]+$/,"");
-    orgList.push({id:newId,name:name+" (読込)"});
-    currentOrgId=newId;
-
-    saveOrgList();
-    saveCurrentOrgData();
-    updateOrgSelectUI();
-    sync();
-    draw();
-    status("JSONを読み込みました");
-  }catch(err){
-    status("読み込み失敗：ファイル形式を確認してください");
+    const newId = "org_" + Date.now();
+    const name = json.orgName || f.name.replace(/\.[^/.]+$/, "");
+    orgStore[newId] = {
+      name: name + " (読込)",
+      root: importedRoot,
+      nextId: json.nextId || Math.max(...flatten(importedRoot).map(n => Number(n.id) || 0)) + 1,
+      collapsed: json.collapsed || []
+    };
+    switchOrg(newId, true);
+    showToast("JSONを読み込みました");
+  } catch (err) {
+    showToast("読み込み失敗：ファイル形式を確認してください");
   }
-  e.target.value="";
+  e.target.value = "";
 };
 
-$("print").onclick=()=>window.print();
-
-/* 画面サイズ変更時、線の位置を再計算 */
-window.addEventListener("resize",()=>{
-  requestAnimationFrame(()=>{
-    drawLines($("tree"),zoom);
-    drawLines($("modalTree"),modalZoom);
-  });
+window.addEventListener("resize", () => {
+  requestAnimationFrame(() => drawLines($("tree"), zoom));
 });
 
-initStorage();
-})();
+// 初期化実行
+updateOrgSelectUI();
+syncForm();
+draw();
+initFirebase();
 </script>
 </body>
 </html>
