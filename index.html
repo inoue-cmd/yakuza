@@ -2,8 +2,9 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>架空組織図メーカー【任侠編】</title>
+
 <style>
 :root{
   --bg:#0b0c10;
@@ -19,129 +20,240 @@
   background:var(--bg);
 }
 *{box-sizing:border-box}
-body{margin:0;padding:12px;background-color:var(--bg)}
-.app{max-width:800px;margin:auto}
+html,body{
+  margin:0;
+  padding:0;
+  background:var(--bg);
+  touch-action:manipulation;
+  -webkit-text-size-adjust:100%;
+}
+body{padding:12px}
+.app{max-width:1000px;margin:auto}
 
-/* ヘッダー */
-header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:8px}
-h1{font-size:18px;margin:0;letter-spacing:0.08em;color:var(--gold)}
+header{
+  display:flex;justify-content:space-between;align-items:flex-start;
+  gap:10px;flex-wrap:wrap;margin-bottom:10px;
+  border-bottom:1px solid var(--border);padding-bottom:8px
+}
+h1{font-size:18px;margin:0;letter-spacing:.08em;color:var(--gold)}
 .sub{color:var(--muted);font-size:11px;margin-top:2px}
 
-/* 共通パネル・ツールバー */
-.toolbar,.panel,.org-switcher{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,0.3)}
+.toolbar,.panel,.org-switcher{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:10px;padding:10px;margin-bottom:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,.3)
+}
 .toolbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-button, select{border:1px solid var(--border);background:#1e222d;color:var(--text);border-radius:6px;padding:8px 12px;cursor:pointer;font-size:13px;font-family:inherit;transition:0.1s}
-button:hover, select:hover{background:#282e3d;border-color:var(--gold)}
+button,select{
+  border:1px solid var(--border);background:#1e222d;color:var(--text);
+  border-radius:6px;padding:8px 12px;cursor:pointer;font-size:13px;
+  font-family:inherit;transition:.1s;touch-action:manipulation
+}
+button:hover,select:hover{background:#282e3d;border-color:var(--gold)}
 select{padding:7px 10px;max-width:100%}
-button:disabled{opacity:0.3;cursor:not-allowed}
+button:disabled{opacity:.3;cursor:not-allowed}
 button.primary{background:var(--crimson);color:#fff;border-color:#e74c3c;font-weight:bold}
 button.primary:hover{background:#a93226}
 button.danger{color:#ff8080;border-color:#5c282a}
 button.danger:hover{background:#3d191b}
 
-.org-switcher{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px}
-
-/* レイアウト */
+.org-switcher{
+  display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px
+}
 .layout{display:flex;flex-direction:column;gap:10px}
 
-/* 編集パネル */
 label{display:block;font-size:11px;color:var(--gold);margin:8px 0 4px;font-weight:bold}
-input{width:100%;padding:9px;border:1px solid var(--border);background:#0f1117;color:var(--text);border-radius:6px;font-size:14px}
+input{
+  width:100%;padding:9px;border:1px solid var(--border);
+  background:#0f1117;color:var(--text);border-radius:6px;font-size:14px
+}
 input:focus{outline:none;border-color:var(--gold)}
 
-/* カラー選択ボタン */
 .color-picker{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
-.color-btn{width:32px;height:32px;border-radius:50%;border:2px solid transparent;padding:0;cursor:pointer;transition:transform 0.1s}
-.color-btn.active{border-color:#fff;transform:scale(1.15);box-shadow:0 0 8px rgba(255,255,255,0.6)}
+.color-btn{
+  width:32px;height:32px;border-radius:50%;border:2px solid transparent;
+  padding:0;cursor:pointer
+}
+.color-btn.active{
+  border-color:#fff;transform:scale(1.15);
+  box-shadow:0 0 8px rgba(255,255,255,.6)
+}
 
-/* キャンバス（通常表示エリア） */
 .canvas-wrap{position:relative}
-.canvas-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:12px;color:var(--gold);gap:6px;flex-wrap:wrap}
-.canvas{background:#0e1017;border:1px solid var(--border);border-radius:10px;min-height:350px;max-height:50vh;overflow:auto;position:relative;padding:20px;cursor:zoom-in}
-.tree{display:flex;flex-direction:column;align-items:center;min-width:max-content;padding:20px;transform-origin:top center}
+.canvas-header{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:6px;font-size:12px;color:var(--gold);gap:6px;flex-wrap:wrap
+}
+.canvas{
+  background:#0e1017;border:1px solid var(--border);border-radius:10px;
+  min-height:350px;max-height:60vh;overflow:auto;position:relative;padding:20px;
+  cursor:zoom-in;overscroll-behavior:contain
+}
+.tree{
+  display:flex;flex-direction:column;align-items:center;
+  min-width:max-content;padding:20px;transform-origin:top center;
+  position:relative
+}
 
-/* フルスクリーン・モーダル表示 */
-.modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:9999;flex-direction:column;padding:10px}
+/* SVG接続線 */
+.tree-lines{
+  position:absolute;left:0;top:0;width:100%;height:100%;
+  overflow:visible;pointer-events:none;z-index:0
+}
+.tree-lines line{
+  stroke:var(--gold);stroke-width:1.2;vector-effect:non-scaling-stroke
+}
+
+/* フルスクリーン */
+.modal-overlay{
+  display:none;position:fixed;inset:0;width:100%;height:100%;
+  background:rgba(0,0,0,.96);z-index:9999;flex-direction:column;padding:10px
+}
 .modal-overlay.active{display:flex}
-.modal-header{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--panel);border-radius:8px 8px 0 0;border:1px solid var(--border);gap:6px;flex-wrap:wrap}
-.modal-zoom-controls{display:flex;gap:4px;align-items:center}
+.modal-header{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:8px 10px;background:var(--panel);
+  border-radius:8px 8px 0 0;border:1px solid var(--border);
+  gap:6px;flex-wrap:wrap
+}
+.modal-zoom-controls{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
 .modal-zoom-controls button{padding:5px 10px;font-size:12px}
-.modal-body{background:#0e1017;flex:1;overflow:auto;border:1px solid var(--border);border-top:0;border-radius:0 0 8px 8px;padding:30px;display:flex;justify-content:center;align-items:flex-start}
+.modal-body{
+  background:#0e1017;flex:1;overflow:auto;border:1px solid var(--border);
+  border-top:0;border-radius:0 0 8px 8px;padding:30px;
+  display:block;overscroll-behavior:contain
+}
 
-/* ツリーノードのデザイン */
-.branch{display:flex;flex-direction:column;align-items:center;position:relative}
-.node{min-width:150px;max-width:200px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--card);text-align:center;box-shadow:0 3px 8px rgba(0,0,0,0.4);cursor:pointer;position:relative;transition:0.15s}
+/* ノード */
+.branch{display:flex;flex-direction:column;align-items:center;position:relative;z-index:1}
+.node{
+  min-width:150px;max-width:220px;padding:10px 12px;
+  border:1px solid var(--border);border-radius:8px;background:var(--card);
+  text-align:center;box-shadow:0 3px 8px rgba(0,0,0,.4);
+  cursor:pointer;position:relative;transition:.15s;z-index:2
+}
 .node:hover{border-color:var(--gold)}
-.node.selected{outline:2px solid var(--crimson);border-color:var(--crimson);box-shadow:0 0 12px rgba(192,57,43,0.5)}
-.node.root-node{border:2px solid var(--gold);background:linear-gradient(180deg,#221e15 100%,#15130e 0%);padding-top:14px}
-.node.root-node::before{content:"◆ 本家 ◆";display:block;font-size:9px;color:var(--gold);letter-spacing:0.15em;margin-bottom:3px}
+.node.selected{
+  outline:2px solid var(--crimson);border-color:var(--crimson);
+  box-shadow:0 0 12px rgba(192,57,43,.5)
+}
+.node.root-node{
+  border:2px solid var(--gold);
+  background:linear-gradient(180deg,#221e15 100%,#15130e 0%);
+  padding-top:14px
+}
+.node.root-node::before{
+  content:"◆ 本家 ◆";display:block;font-size:9px;color:var(--gold);
+  letter-spacing:.15em;margin-bottom:3px
+}
 
 /* 役職バッジ */
-.role-badge{display:inline-block;font-size:10px;color:#fff;padding:2px 6px;border-radius:3px;margin-bottom:4px;letter-spacing:0.05em;font-weight:bold}
-.badge-gold{background:#d4af37;color:#0f1117;}
-.badge-crimson{background:#c0392b;color:#fff;}
-.badge-purple{background:#8e44ad;color:#fff;}
-.badge-blue{background:#2980b9;color:#fff;}
-.badge-green{background:#27ae60;color:#fff;}
-.badge-gray{background:#4b6584;color:#fff;}
+.role-badge{
+  display:inline-block;font-size:10px;color:#fff;padding:2px 6px;
+  border-radius:3px;margin-bottom:4px;letter-spacing:.05em;font-weight:bold
+}
+.badge-gold{background:#d4af37;color:#0f1117}
+.badge-crimson{background:#c0392b;color:#fff}
+.badge-purple{background:#8e44ad;color:#fff}
+.badge-blue{background:#2980b9;color:#fff}
+.badge-green{background:#27ae60;color:#fff}
+.badge-gray{background:#4b6584;color:#fff}
 
-.node strong{display:block;font-size:14px;letter-spacing:0.05em;color:#fff;word-break:break-all}
-.node small{display:block;color:var(--muted);margin-top:4px;font-size:11px;border-top:1px dashed var(--border);padding-top:4px;word-break:break-all}
+.node strong{
+  display:block;font-size:14px;letter-spacing:.05em;color:#fff;
+  word-break:break-all
+}
+.node small{
+  display:block;color:var(--muted);margin-top:4px;font-size:11px;
+  border-top:1px dashed var(--border);padding-top:4px;word-break:break-all
+}
 
-/* 接続線 */
-.connector{height:18px;border-left:1px solid var(--gold)}
-.children{display:flex;justify-content:center;gap:16px;position:relative;padding-top:18px}
-.children:before{content:"";position:absolute;top:0;left:50%;height:1px;width:calc(100% - 150px);transform:translateX(-50%);background:var(--gold)}
-.children>.branch:before{content:"";position:absolute;top:0;height:18px;border-left:1px solid var(--gold)}
-.children>.branch:first-child:after,.children>.branch:last-child:after{content:"";position:absolute;top:0;width:50%;border-top:1px solid var(--gold)}
-.children>.branch:first-child:after{left:50%}
-.children>.branch:last-child:after{right:50%}
-.children>.branch:only-child:after{display:none}
-.children>.branch .node{position:relative;z-index:1}
+/* 子組織 */
+.connector{height:22px;width:1px;background:transparent}
+.children{
+  display:flex;justify-content:center;gap:16px;position:relative;padding-top:22px
+}
+.children>.branch{position:relative}
+.children>.branch .node{position:relative;z-index:2}
+
+/* アコーディオン */
+.collapse-btn{
+  display:block;width:100%;margin-top:7px;padding:5px 7px;
+  font-size:10px;color:var(--gold);background:#10131b;
+  border:1px solid #3a3540;border-radius:5px;min-height:28px
+}
+.collapse-btn:hover{background:#292332;border-color:var(--gold)}
 
 .status{font-size:11px;color:var(--gold);min-height:16px;margin-top:8px}
-.meta-info{color:var(--muted);font-size:11px;margin-top:6px;display:flex;justify-content:space-between;align-items:center}
+.meta-info{
+  color:var(--muted);font-size:11px;margin-top:6px;
+  display:flex;justify-content:space-between;align-items:center
+}
+
+@media(max-width:600px){
+  body{padding:8px}
+  h1{font-size:16px}
+  .canvas{padding:8px;min-height:300px}
+  .tree{padding:15px}
+  .children{gap:10px}
+  .node{min-width:120px;max-width:170px;padding:8px}
+  .node strong{font-size:12px}
+  .node small{font-size:10px}
+  button,select{padding:7px 9px;font-size:12px}
+}
+
+@media print{
+  body{background:#fff;color:#000}
+  .no-print,.modal-overlay{display:none!important}
+  .canvas{max-height:none;overflow:visible;border:0;background:white}
+  .tree{zoom:1!important}
+  .node{background:white;color:black;box-shadow:none;border-color:#333}
+  .node strong{color:black}
+  .node small{color:#333}
+  .role-badge{print-color-adjust:exact}
+}
 </style>
 </head>
+
 <body>
 <div class="app">
+
 <header>
-<div>
-<h1>架空組織図メーカー【任侠編】</h1>
-<div class="sub">スマホ対応 / 自動保存</div>
-</div>
-<div class="toolbar no-print" style="margin:0;border:0;padding:0;background:transparent">
-  <button id="sample">サンプル読込</button>
-  <button id="saveJson">JSON保存</button>
-  <button id="loadJson">JSON読込</button>
-  <button id="print">印刷</button>
-  <input id="file" type="file" accept=".json,application/json" hidden>
-</div>
+  <div>
+    <h1>架空組織図メーカー【任侠編】</h1>
+    <div class="sub">スマホ対応 / 自動保存 / アコーディオン</div>
+  </div>
+
+  <div class="toolbar no-print" style="margin:0;border:0;padding:0;background:transparent">
+    <button id="sample">サンプル読込</button>
+    <button id="saveJson">JSON保存</button>
+    <button id="loadJson">JSON読込</button>
+    <button id="print">印刷</button>
+    <input id="file" type="file" accept=".json,application/json" hidden>
+  </div>
 </header>
 
-<!-- 組織の切り替え・管理バー -->
 <div class="org-switcher no-print">
-  <span style="color:var(--gold);font-weight:bold;white-space:nowrap;">組織：</span>
-  <select id="orgSelect" style="flex:1;min-width:130px;"></select>
+  <span style="color:var(--gold);font-weight:bold;white-space:nowrap">組織：</span>
+  <select id="orgSelect" style="flex:1;min-width:130px"></select>
   <button id="newOrg" class="primary">新規</button>
   <button id="renameOrg">名前変更</button>
   <button id="deleteOrg" class="danger">削除</button>
 </div>
 
 <div class="layout">
-  <!-- 操作ツールバー -->
   <div class="toolbar no-print">
     <button class="primary" id="addChild">＋ 子分追加</button>
     <button id="addSibling">＋ 同格追加</button>
     <button class="danger" id="delete">破門・削除</button>
   </div>
 
-  <!-- 編集パネル -->
   <aside class="panel sidebar no-print">
-    <h3 style="margin:0 0 6px 0;font-size:14px;color:var(--gold)">構成員の編集</h3>
+    <h3 style="margin:0 0 6px;font-size:14px;color:var(--gold)">構成員の編集</h3>
+
     <div style="font-size:12px;color:var(--muted);background:#0f1117;padding:6px 8px;border-radius:4px;border:1px solid var(--border)" id="selectedLabel">選択：なし</div>
 
-    <label for="nodeRole">役職・盃（例：若頭、本部長など）</label>
+    <label for="nodeRole">役職・盃</label>
     <input id="nodeRole" maxlength="50" placeholder="若頭">
 
     <label>役職バッジの色</label>
@@ -164,36 +276,37 @@ input:focus{outline:none;border-color:var(--gold)}
     <div class="status" id="status"></div>
   </aside>
 
-  <!-- 組織図 -->
   <div class="canvas-wrap">
     <div class="canvas-header">
       <span id="count">総勢 1名</span>
-      <div style="display:flex;gap:4px;align-items:center;">
-        <button id="zoomOut" style="padding:4px 8px;font-size:12px;">−</button>
-        <button id="zoomReset" style="padding:4px 8px;font-size:12px;">100%</button>
-        <button id="zoomIn" style="padding:4px 8px;font-size:12px;">＋</button>
-        <button id="expandModal" style="font-size:11px;padding:4px 8px;background:#222;color:var(--gold);border:1px solid var(--gold);margin-left:4px;">🔍 全画面で見る</button>
+      <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">
+        <button id="zoomOut" style="padding:4px 8px;font-size:12px">−</button>
+        <button id="zoomReset" style="padding:4px 8px;font-size:12px">100%</button>
+        <button id="zoomIn" style="padding:4px 8px;font-size:12px">＋</button>
+        <button id="expandModal" style="font-size:11px;padding:4px 8px;background:#222;color:var(--gold);border:1px solid var(--gold);margin-left:4px">🔍 全画面で見る</button>
       </div>
     </div>
+
     <div class="canvas" id="mainCanvas">
       <div class="tree" id="tree"></div>
     </div>
+
     <div class="meta-info">
-      <span style="font-size:10px;color:var(--muted)">※カードをタップして編集・色変更ができます</span>
+      <span style="font-size:10px;color:var(--muted)">カード選択で編集・色変更 / ＋−で傘下を開閉</span>
     </div>
   </div>
 </div>
 </div>
 
-<!-- フルスクリーン・モーダル -->
+<!-- 全画面モード -->
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal-header">
-    <span style="font-size:13px;color:var(--gold);font-weight:bold;">◆ 全画面表示 ◆</span>
+    <span style="font-size:13px;color:var(--gold);font-weight:bold">◆ 全画面表示 ◆</span>
     <div class="modal-zoom-controls">
       <button id="modalZoomOut">縮小 −</button>
       <button id="modalZoomReset">100%</button>
       <button id="modalZoomIn">拡大 ＋</button>
-      <button id="closeModal" style="background:var(--crimson);color:#fff;border:0;font-weight:bold;margin-left:6px;">閉じる ✕</button>
+      <button id="closeModal" style="background:var(--crimson);color:#fff;border:0;font-weight:bold;margin-left:6px">閉じる ✕</button>
     </div>
   </div>
   <div class="modal-body" id="modalBody">
@@ -205,11 +318,12 @@ input:focus{outline:none;border-color:var(--gold)}
 (()=>{
 const $=id=>document.getElementById(id);
 
-const STORAGE_KEY_LIST="yakuza_org_list_v5";
-const STORAGE_PREFIX="yakuza_org_data_v5";
+const STORAGE_KEY_LIST="yakuza_org_list_v6";
+const STORAGE_PREFIX="yakuza_org_data_v6";
 
 const defaultOrgId="org_default_1";
 const defaultOrgName="二代目黒鉄組（サンプル）";
+
 const defaultRoot={
   id:1,
   name:"黒鉄 厳蔵",
@@ -218,140 +332,37 @@ const defaultRoot={
   badgeColor:"gold",
   children:[
     {
-      id:2,name:"陣内 宗介",role:"若頭 / 陣内組",dept:"執行部・港湾利権",badgeColor:"crimson",
+      id:2,name:"陣内 宗介",role:"若頭 / 陣内組",
+      dept:"執行部・港湾利権",badgeColor:"crimson",
       children:[
         {id:5,name:"冴島 剛",role:"若頭補佐",dept:"武闘派",badgeColor:"blue",children:[]},
         {id:6,name:"氷室 怜司",role:"若頭補佐",dept:"金融・フロント",badgeColor:"blue",children:[]}
       ]
     },
     {
-      id:3,name:"九条 勝",role:"舎弟頭",dept:"渉外担当",badgeColor:"purple",
-      children:[]
+      id:3,name:"九条 勝",role:"舎弟頭",dept:"渉外担当",
+      badgeColor:"purple",children:[]
     }
   ]
 };
 
-let orgList = [];
-let currentOrgId = defaultOrgId;
-let root = JSON.parse(JSON.stringify(defaultRoot));
-let selected = 1;
-let selectedColor = "gold";
-let nextId = 7;
-let zoom = 1;
-let modalZoom = 1;
+let orgList=[];
+let currentOrgId=defaultOrgId;
+let root=JSON.parse(JSON.stringify(defaultRoot));
+let selected=1;
+let selectedColor="gold";
+let nextId=7;
+let zoom=1;
+let modalZoom=1;
+let collapsed=new Set();
 
-function initStorage(){
-  try{
-    const savedList = localStorage.getItem(STORAGE_KEY_LIST);
-    if(savedList) orgList = JSON.parse(savedList);
-  }catch(e){}
-
-  if(!orgList.length){
-    orgList = [{ id: defaultOrgId, name: defaultOrgName }];
-    localStorage.setItem(STORAGE_KEY_LIST, JSON.stringify(orgList));
-    localStorage.setItem(STORAGE_PREFIX + defaultOrgId, JSON.stringify({root: defaultRoot, nextId: 7}));
-  }
-  currentOrgId = orgList[0].id;
-  loadOrgData(currentOrgId);
+function flatten(n){
+  return [n,...(n.children||[]).flatMap(flatten)];
 }
-
-function saveOrgList(){
-  localStorage.setItem(STORAGE_KEY_LIST, JSON.stringify(orgList));
-}
-
-function saveCurrentOrgData(){
-  localStorage.setItem(STORAGE_PREFIX + currentOrgId, JSON.stringify({root, nextId}));
-}
-
-function loadOrgData(id){
-  currentOrgId = id;
-  const raw = localStorage.getItem(STORAGE_PREFIX + id);
-  if(raw){
-    try{
-      const data = JSON.parse(raw);
-      root = data.root || data;
-      nextId = data.nextId || (Math.max(...flatten(root).map(n=>n.id))+1);
-    }catch(e){
-      root = JSON.parse(JSON.stringify(defaultRoot));
-      nextId = 7;
-    }
-  }else{
-    root = { id:1, name:"新・組長", role:"組長", dept:"本家", badgeColor:"gold", children:[] };
-    nextId = 2;
-  }
-  selected = root.id;
-  updateOrgSelectUI();
-  sync();
-  draw();
-}
-
-function updateOrgSelectUI(){
-  const sel = $("orgSelect");
-  sel.innerHTML = "";
-  orgList.forEach(org=>{
-    const opt = document.createElement("option");
-    opt.value = org.id;
-    opt.textContent = org.name;
-    if(org.id === currentOrgId) opt.selected = true;
-    sel.append(opt);
-  });
-}
-
-$("orgSelect").onchange = e => {
-  saveCurrentOrgData();
-  loadOrgData(e.target.value);
-  status("組織を切り替えました");
-};
-
-$("newOrg").onclick = () => {
-  const name = prompt("新しい組織名を入力してください：", "白虎会");
-  if(!name || !name.trim()) return;
-
-  saveCurrentOrgData();
-  const newId = "org_" + Date.now();
-  orgList.push({ id: newId, name: name.trim() });
-  saveOrgList();
-
-  root = { id: 1, name: "初代 " + name.trim(), role: "組長", dept:"本家", badgeColor:"gold", children: [] };
-  nextId = 2;
-  selected = 1;
-
-  saveCurrentOrgData();
-  updateOrgSelectUI();
-  sync();
-  draw();
-  status("新組織「" + name.trim() + "」を作成しました");
-};
-
-$("renameOrg").onclick = () => {
-  const org = orgList.find(o => o.id === currentOrgId);
-  if(!org) return;
-  const newName = prompt("組織名を変更：", org.name);
-  if(!newName || !newName.trim()) return;
-  org.name = newName.trim();
-  saveOrgList();
-  updateOrgSelectUI();
-  status("組織名を変更しました");
-};
-
-$("deleteOrg").onclick = () => {
-  if(orgList.length <= 1){
-    alert("最後の組織は削除できません。");
-    return;
-  }
-  const org = orgList.find(o => o.id === currentOrgId);
-  if(!confirm(`「${org.name}」を削除しますか？`)) return;
-
-  localStorage.removeItem(STORAGE_PREFIX + currentOrgId);
-  orgList = orgList.filter(o => o.id !== currentOrgId);
-  saveOrgList();
-  loadOrgData(orgList[0].id);
-  status("削除しました");
-};
 
 function find(n,id){
   if(n.id===id)return n;
-  for(const c of n.children){
+  for(const c of (n.children||[])){
     const r=find(c,id);
     if(r)return r;
   }
@@ -359,7 +370,7 @@ function find(n,id){
 }
 
 function parent(n,id){
-  for(const c of n.children){
+  for(const c of (n.children||[])){
     if(c.id===id)return n;
     const r=parent(c,id);
     if(r)return r;
@@ -367,42 +378,105 @@ function parent(n,id){
   return null;
 }
 
-function flatten(n){
-  return [n,...n.children.flatMap(flatten)];
+function status(s){$("status").textContent=s;}
+
+function saveOrgList(){
+  localStorage.setItem(STORAGE_KEY_LIST,JSON.stringify(orgList));
 }
 
-function status(s){
-  $("status").textContent=s;
+function saveCurrentOrgData(){
+  localStorage.setItem(STORAGE_PREFIX+currentOrgId,JSON.stringify({
+    root,nextId,collapsed:[...collapsed]
+  }));
+}
+
+function updateOrgSelectUI(){
+  const sel=$("orgSelect");
+  sel.replaceChildren();
+  orgList.forEach(org=>{
+    const opt=document.createElement("option");
+    opt.value=org.id;
+    opt.textContent=org.name;
+    opt.selected=org.id===currentOrgId;
+    sel.append(opt);
+  });
+}
+
+function initStorage(){
+  try{
+    const saved=localStorage.getItem(STORAGE_KEY_LIST);
+    if(saved)orgList=JSON.parse(saved);
+  }catch(e){orgList=[];}
+
+  if(!orgList.length){
+    orgList=[{id:defaultOrgId,name:defaultOrgName}];
+    localStorage.setItem(STORAGE_KEY_LIST,JSON.stringify(orgList));
+    localStorage.setItem(STORAGE_PREFIX+defaultOrgId,JSON.stringify({
+      root:defaultRoot,nextId:7,collapsed:[]
+    }));
+  }
+
+  currentOrgId=orgList[0].id;
+  loadOrgData(currentOrgId);
+}
+
+function loadOrgData(id){
+  currentOrgId=id;
+  collapsed.clear();
+
+  const raw=localStorage.getItem(STORAGE_PREFIX+id);
+
+  if(raw){
+    try{
+      const data=JSON.parse(raw);
+      root=data.root||data;
+      nextId=data.nextId||Math.max(...flatten(root).map(n=>Number(n.id)||0))+1;
+      collapsed=new Set(data.collapsed||[]);
+    }catch(e){
+      root=JSON.parse(JSON.stringify(defaultRoot));
+      nextId=7;
+      collapsed.clear();
+    }
+  }else{
+    root={id:1,name:"新・組長",role:"組長",dept:"本家",badgeColor:"gold",children:[]};
+    nextId=2;
+  }
+
+  selected=root.id;
+  updateOrgSelectUI();
+  sync();
+  draw();
 }
 
 function updateColorPickerUI(color){
-  selectedColor = color;
+  selectedColor=color;
   document.querySelectorAll(".color-btn").forEach(btn=>{
-    btn.classList.toggle("active", btn.dataset.color === color);
+    btn.classList.toggle("active",btn.dataset.color===color);
   });
 }
 
 document.querySelectorAll(".color-btn").forEach(btn=>{
-  btn.onclick = () => {
-    updateColorPickerUI(btn.dataset.color);
-  };
+  btn.onclick=()=>updateColorPickerUI(btn.dataset.color);
 });
 
 function sync(){
   const n=find(root,selected)||root;
   selected=n.id;
-  $("nodeName").value=n.name;
-  $("nodeRole").value=n.role;
-  $("nodeDept").value=n.dept;
-  const defaultCol = n.id === root.id ? "gold" : "crimson";
-  updateColorPickerUI(n.badgeColor || defaultCol);
+
+  $("nodeName").value=n.name||"";
+  $("nodeRole").value=n.role||"";
+  $("nodeDept").value=n.dept||"";
+
+  updateColorPickerUI(n.badgeColor||(n.id===root.id?"gold":"crimson"));
   $("selectedLabel").textContent="選択："+n.name+"（"+(n.role||"役職なし")+"）";
   $("delete").disabled=n.id===root.id;
 }
 
-function render(n, isRoot=false){
+/* 組織カード */
+function render(n,isRoot=false){
   const branch=document.createElement("div");
   branch.className="branch";
+  branch.dataset.id=n.id;
 
   const card=document.createElement("div");
   card.className="node"+(isRoot?" root-node":"")+(n.id===selected?" selected":"");
@@ -410,20 +484,38 @@ function render(n, isRoot=false){
 
   if(n.role){
     const role=document.createElement("div");
-    const col = n.badgeColor || (isRoot ? "gold" : "crimson");
-    role.className="role-badge badge-" + col;
+    role.className="role-badge badge-"+(n.badgeColor||(isRoot?"gold":"crimson"));
     role.textContent=n.role;
     card.append(role);
   }
 
   const name=document.createElement("strong");
-  name.textContent=n.name;
+  name.textContent=n.name||"名称未設定";
   card.append(name);
 
   if(n.dept){
     const dept=document.createElement("small");
     dept.textContent=n.dept;
     card.append(dept);
+  }
+
+  const descendantCount=(n.children||[]).reduce((sum,c)=>sum+flatten(c).length,0);
+
+  if(n.children&&n.children.length){
+    const toggle=document.createElement("button");
+    toggle.className="collapse-btn";
+    toggle.type="button";
+    const closed=collapsed.has(n.id);
+
+    toggle.textContent=(closed?"＋":"−")+" 傘下 "+descendantCount+"人";
+
+    toggle.onclick=e=>{
+      e.stopPropagation();
+      if(collapsed.has(n.id))collapsed.delete(n.id);
+      else collapsed.add(n.id);
+      draw();
+    };
+    card.append(toggle);
   }
 
   card.onclick=e=>{
@@ -435,52 +527,227 @@ function render(n, isRoot=false){
 
   branch.append(card);
 
-  if(n.children.length){
+  if(n.children&&n.children.length&&!collapsed.has(n.id)){
     const line=document.createElement("div");
     line.className="connector";
     branch.append(line);
 
     const kids=document.createElement("div");
     kids.className="children";
-    n.children.forEach(c=>kids.append(render(c, false)));
+
+    n.children.forEach(c=>kids.append(render(c,false)));
     branch.append(kids);
   }
 
   return branch;
 }
 
+/* SVGで正確な接続線を描く */
+function drawLines(treeElement,currentZoom){
+  const old=treeElement.querySelector(".tree-lines");
+  if(old)old.remove();
+
+  const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");
+  svg.classList.add("tree-lines");
+
+  const treeRect=treeElement.getBoundingClientRect();
+  const width=Math.max(treeElement.scrollWidth,1);
+  const height=Math.max(treeElement.scrollHeight,1);
+
+  svg.setAttribute("width",width);
+  svg.setAttribute("height",height);
+  svg.setAttribute("viewBox",`0 0 ${width} ${height}`);
+
+  const branches=treeElement.querySelectorAll(".branch");
+
+  branches.forEach(branch=>{
+    const childrenBox=branch.querySelector(":scope > .children");
+    if(!childrenBox)return;
+
+    const parentNode=branch.querySelector(":scope > .node");
+    if(!parentNode)return;
+
+    const childBranches=childrenBox.querySelectorAll(":scope > .branch");
+    if(!childBranches.length)return;
+
+    const p=parentNode.getBoundingClientRect();
+    const first=childBranches[0].querySelector(":scope > .node")?.getBoundingClientRect();
+    const last=childBranches[childBranches.length-1].querySelector(":scope > .node")?.getBoundingClientRect();
+    if(!first||!last)return;
+
+    const scale=currentZoom||1;
+    const px=(p.left+p.width/2-treeRect.left)/scale;
+    const py=(p.bottom-treeRect.top)/scale;
+    const fx=(first.left+first.width/2-treeRect.left)/scale;
+    const fy=(first.top-treeRect.top)/scale;
+    const lx=(last.left+last.width/2-treeRect.left)/scale;
+    const ly=(last.top-treeRect.top)/scale;
+
+    const midY=py+(fy-py)/2;
+
+    function line(x1,y1,x2,y2){
+      const el=document.createElementNS("http://www.w3.org/2000/svg","line");
+      el.setAttribute("x1",x1);
+      el.setAttribute("y1",y1);
+      el.setAttribute("x2",x2);
+      el.setAttribute("y2",y2);
+      svg.append(el);
+    }
+
+    // 親から中央まで
+    line(px,py,px,midY);
+
+    // 子が複数いる場合の横線
+    if(childBranches.length>1)line(fx,midY,lx,midY);
+
+    // 各子へ接続
+    childBranches.forEach(cb=>{
+      const childNode=cb.querySelector(":scope > .node");
+      if(!childNode)return;
+      const r=childNode.getBoundingClientRect();
+      const cx=(r.left+r.width/2-treeRect.left)/scale;
+      const cy=(r.top-treeRect.top)/scale;
+      line(cx,midY,cx,cy);
+    });
+  });
+
+  treeElement.prepend(svg);
+}
+
 function applyZoom(){
-  $("tree").style.zoom = zoom;
-  $("zoomReset").textContent = Math.round(zoom * 100) + "%";
-  $("modalTree").style.zoom = modalZoom;
-  $("modalZoomReset").textContent = Math.round(modalZoom * 100) + "%";
+  $("tree").style.zoom=zoom;
+  $("zoomReset").textContent=Math.round(zoom*100)+"%";
+  $("modalTree").style.zoom=modalZoom;
+  $("modalZoomReset").textContent=Math.round(modalZoom*100)+"%";
 }
 
 function draw(){
-  $("tree").replaceChildren(render(root, true));
-  $("modalTree").replaceChildren(render(root, true));
+  $("tree").replaceChildren(render(root,true));
+  $("modalTree").replaceChildren(render(root,true));
   applyZoom();
 
   $("count").textContent="総勢 "+flatten(root).length+" 名・団体";
+
+  // 描画完了後に位置を測定して線を引く
+  requestAnimationFrame(()=>{
+    drawLines($("tree"),zoom);
+    drawLines($("modalTree"),modalZoom);
+  });
+
   saveCurrentOrgData();
 }
 
-$("zoomIn").onclick=()=>{ zoom=Math.min(1.8, +(zoom+.1).toFixed(1)); applyZoom(); };
-$("zoomOut").onclick=()=>{ zoom=Math.max(.4, +(zoom-.1).toFixed(1)); applyZoom(); };
-$("zoomReset").onclick=()=>{ zoom=1; applyZoom(); };
+/* 組織切り替え */
+$("orgSelect").onchange=e=>{
+  saveCurrentOrgData();
+  loadOrgData(e.target.value);
+  status("組織を切り替えました");
+};
 
-$("modalZoomIn").onclick=()=>{ modalZoom=Math.min(2.0, +(modalZoom+.15).toFixed(2)); applyZoom(); };
-$("modalZoomOut").onclick=()=>{ modalZoom=Math.max(.3, +(modalZoom-.15).toFixed(2)); applyZoom(); };
-$("modalZoomReset").onclick=()=>{ modalZoom=1; applyZoom(); };
+/* 新規組織 */
+$("newOrg").onclick=()=>{
+  const name=prompt("新しい組織名を入力してください：","白虎会");
+  if(!name||!name.trim())return;
 
-$("expandModal").onclick = () => { $("modalOverlay").classList.add("active"); };
-$("closeModal").onclick = () => { $("modalOverlay").classList.remove("active"); };
-$("mainCanvas").onclick = (e) => {
-  if(e.target === $("mainCanvas") || e.target.classList.contains('tree')){
+  saveCurrentOrgData();
+  const id="org_"+Date.now();
+  orgList.push({id,name:name.trim()});
+  saveOrgList();
+
+  root={id:1,name:"初代 "+name.trim(),role:"組長",dept:"本家",badgeColor:"gold",children:[]};
+  nextId=2;
+  selected=1;
+  collapsed.clear();
+  currentOrgId=id;
+
+  saveCurrentOrgData();
+  updateOrgSelectUI();
+  sync();
+  draw();
+  status("新組織「"+name.trim()+"」を作成しました");
+};
+
+/* 組織名変更 */
+$("renameOrg").onclick=()=>{
+  const org=orgList.find(o=>o.id===currentOrgId);
+  if(!org)return;
+
+  const name=prompt("組織名を変更：",org.name);
+  if(!name||!name.trim())return;
+
+  org.name=name.trim();
+  saveOrgList();
+  updateOrgSelectUI();
+  status("組織名を変更しました");
+};
+
+/* 組織削除 */
+$("deleteOrg").onclick=()=>{
+  if(orgList.length<=1){
+    alert("最後の組織は削除できません。");
+    return;
+  }
+
+  const org=orgList.find(o=>o.id===currentOrgId);
+  if(!org||!confirm("「"+org.name+"」を削除しますか？"))return;
+
+  localStorage.removeItem(STORAGE_PREFIX+currentOrgId);
+  orgList=orgList.filter(o=>o.id!==currentOrgId);
+  saveOrgList();
+  loadOrgData(orgList[0].id);
+  status("削除しました");
+};
+
+/* ズーム */
+$("zoomIn").onclick=()=>{
+  zoom=Math.min(2.0,+(zoom+.1).toFixed(2));
+  applyZoom();
+  draw();
+};
+$("zoomOut").onclick=()=>{
+  zoom=Math.max(.15,+(zoom-.1).toFixed(2));
+  applyZoom();
+  draw();
+};
+$("zoomReset").onclick=()=>{
+  zoom=1;
+  applyZoom();
+  draw();
+};
+
+$("modalZoomIn").onclick=()=>{
+  modalZoom=Math.min(3.0,+(modalZoom+.15).toFixed(2));
+  applyZoom();
+  draw();
+};
+$("modalZoomOut").onclick=()=>{
+  modalZoom=Math.max(.10,+(modalZoom-.15).toFixed(2));
+  applyZoom();
+  draw();
+};
+$("modalZoomReset").onclick=()=>{
+  modalZoom=1;
+  applyZoom();
+  draw();
+};
+
+/* 全画面 */
+$("expandModal").onclick=()=>{
+  $("modalOverlay").classList.add("active");
+  draw();
+};
+$("closeModal").onclick=()=>{
+  $("modalOverlay").classList.remove("active");
+};
+
+$("mainCanvas").onclick=e=>{
+  if(e.target===$("mainCanvas")) {
     $("modalOverlay").classList.add("active");
+    draw();
   }
 };
 
+/* 子分・同格追加 */
 function add(sibling){
   const current=find(root,selected);
   const target=sibling?parent(root,selected):current;
@@ -503,30 +770,37 @@ function add(sibling){
   selected=n.id;
   sync();
   draw();
+
   $("nodeName").focus();
   $("nodeName").select();
-  status("傘下を追加しました");
+  status("構成員を追加しました");
 }
-
 $("addChild").onclick=()=>add(false);
 $("addSibling").onclick=()=>add(true);
 
+/* 編集反映 */
 $("apply").onclick=()=>{
   const n=find(root,selected);
+  if(!n)return;
+
   n.name=$("nodeName").value.trim()||"名称未設定";
   n.role=$("nodeRole").value.trim();
   n.dept=$("nodeDept").value.trim();
   n.badgeColor=selectedColor;
+
   sync();
   draw();
   status("保存しました");
 };
 
+/* 削除 */
 $("delete").onclick=()=>{
   if(selected===root.id)return;
   if(!confirm("この構成員を破門・削除しますか？"))return;
 
   const p=parent(root,selected);
+  if(!p)return;
+
   p.children=p.children.filter(n=>n.id!==selected);
   selected=p.id;
   sync();
@@ -534,58 +808,81 @@ $("delete").onclick=()=>{
   status("削除しました");
 };
 
+/* サンプル読込 */
 $("sample").onclick=()=>{
   if(!confirm("サンプル組織で上書きしますか？"))return;
-  root = JSON.parse(JSON.stringify(defaultRoot));
-  nextId = 7;
-  selected = 1;
+
+  root=JSON.parse(JSON.stringify(defaultRoot));
+  nextId=7;
+  selected=1;
+  collapsed.clear();
   sync();
   draw();
   status("サンプルを読み込みました");
 };
 
+/* JSON保存 */
 $("saveJson").onclick=()=>{
-  const org = orgList.find(o => o.id === currentOrgId);
-  const blob=new Blob([JSON.stringify({orgName: org ? org.name : "org", root, nextId},null,2)],{type:"application/json"});
+  const org=orgList.find(o=>o.id===currentOrgId);
+  const blob=new Blob([JSON.stringify({
+    orgName:org?org.name:"org",
+    root,nextId,collapsed:[...collapsed]
+  },null,2)],{type:"application/json"});
+
   const url=URL.createObjectURL(blob);
   const a=document.createElement("a");
   a.href=url;
-  a.download=(org ? org.name : "yakuza") + "-chart.json";
+  a.download=(org?org.name:"yakuza")+"-chart.json";
   a.click();
   URL.revokeObjectURL(url);
   status("JSONファイルを保存しました");
 };
 
+/* JSON読み込み */
 $("loadJson").onclick=()=>$("file").click();
 
 $("file").onchange=async e=>{
   const f=e.target.files[0];
   if(!f)return;
+
   try{
     const json=JSON.parse(await f.text());
-    const v = json.root ? json.root : json;
-    const importedOrgName = json.orgName || f.name.replace(/\.[^/.]+$/, "");
+    const importedRoot=json.root||json;
 
-    root = v;
-    nextId = Math.max(...flatten(v).map(n=>n.id))+1;
-    selected = root.id;
+    if(!importedRoot||!importedRoot.name)throw new Error("invalid");
 
-    const newId = "org_" + Date.now();
-    orgList.push({ id: newId, name: importedOrgName + " (読込)" });
-    currentOrgId = newId;
+    root=importedRoot;
+    nextId=json.nextId||Math.max(...flatten(root).map(n=>Number(n.id)||0))+1;
+    selected=root.id;
+
+    collapsed=new Set(json.collapsed||[]);
+
+    const newId="org_"+Date.now();
+    const name=json.orgName||f.name.replace(/\.[^/.]+$/,"");
+    orgList.push({id:newId,name:name+" (読込)"});
+    currentOrgId=newId;
+
     saveOrgList();
+    saveCurrentOrgData();
     updateOrgSelectUI();
-
     sync();
     draw();
     status("JSONを読み込みました");
-  }catch{
+  }catch(err){
     status("読み込み失敗：ファイル形式を確認してください");
   }
   e.target.value="";
 };
 
 $("print").onclick=()=>window.print();
+
+/* 画面サイズ変更時、線の位置を再計算 */
+window.addEventListener("resize",()=>{
+  requestAnimationFrame(()=>{
+    drawLines($("tree"),zoom);
+    drawLines($("modalTree"),modalZoom);
+  });
+});
 
 initStorage();
 })();
