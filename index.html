@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>架空組織図メーカー【任侠編】</title>
 <style>
 :root{
@@ -44,21 +44,23 @@ button.danger:hover{background:#3d191b}
 /* レイアウト：上から 組織選択 → ツールバー → 編集パネル → 組織図 */
 .layout{display:flex;flex-direction:column;gap:10px}
 
-/* 編集サイドバー（上部配置） */
+/* 編集パネル */
 label{display:block;font-size:11px;color:var(--gold);margin:8px 0 4px;font-weight:bold}
 input{width:100%;padding:9px;border:1px solid var(--border);background:#0f1117;color:var(--text);border-radius:6px;font-size:14px}
 input:focus{outline:none;border-color:var(--gold)}
 
-/* キャンバス（ツリー表示エリア） */
+/* キャンバス（通常表示エリア） */
 .canvas-wrap{position:relative}
-.canvas-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:12px;color:var(--gold)}
+.canvas-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:12px;color:var(--gold);gap:6px;flex-wrap:wrap}
 .canvas{background:#0e1017;border:1px solid var(--border);border-radius:10px;min-height:350px;max-height:50vh;overflow:auto;position:relative;padding:20px;cursor:zoom-in}
-.tree{display:flex;flex-direction:column;align-items:center;min-width:max-content;padding:20px}
+.tree{display:flex;flex-direction:column;align-items:center;min-width:max-content;padding:20px;transform-origin:top center}
 
 /* フルスクリーン・モーダル表示 */
-.modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:9999;flex-direction:column;padding:12px}
+.modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:9999;flex-direction:column;padding:10px}
 .modal-overlay.active{display:flex}
-.modal-header{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--panel);border-radius:8px 8px 0 0;border:1px solid var(--border)}
+.modal-header{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--panel);border-radius:8px 8px 0 0;border:1px solid var(--border);gap:6px;flex-wrap:wrap}
+.modal-zoom-controls{display:flex;gap:4px;align-items:center}
+.modal-zoom-controls button{padding:5px 10px;font-size:12px}
 .modal-body{background:#0e1017;flex:1;overflow:auto;border:1px solid var(--border);border-top:0;border-radius:0 0 8px 8px;padding:30px;display:flex;justify-content:center;align-items:flex-start}
 
 /* ツリーノードのデザイン */
@@ -144,13 +146,18 @@ input:focus{outline:none;border-color:var(--gold)}
   <div class="canvas-wrap">
     <div class="canvas-header">
       <span id="count">総勢 1名</span>
-      <button id="expandModal" style="font-size:11px;padding:4px 8px;background:#222;color:var(--gold);border:1px solid var(--gold)">🔍 全画面で見る</button>
+      <div style="display:flex;gap:4px;align-items:center;">
+        <button id="zoomOut" style="padding:4px 8px;font-size:12px;">−</button>
+        <button id="zoomReset" style="padding:4px 8px;font-size:12px;">100%</button>
+        <button id="zoomIn" style="padding:4px 8px;font-size:12px;">＋</button>
+        <button id="expandModal" style="font-size:11px;padding:4px 8px;background:#222;color:var(--gold);border:1px solid var(--gold);margin-left:4px;">🔍 全画面で見る</button>
+      </div>
     </div>
     <div class="canvas" id="mainCanvas">
       <div class="tree" id="tree"></div>
     </div>
     <div class="meta-info">
-      <span style="font-size:10px;color:var(--muted)">※組織図をタップすると全画面拡大します</span>
+      <span style="font-size:10px;color:var(--muted)">※余白をタップするか「全画面で見る」で大きく表示できます</span>
     </div>
   </div>
 </div>
@@ -159,8 +166,13 @@ input:focus{outline:none;border-color:var(--gold)}
 <!-- フルスクリーン・モーダル -->
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal-header">
-    <span style="font-size:13px;color:var(--gold);font-weight:bold;">◆ 組織図 全画面表示 ◆</span>
-    <button id="closeModal" style="padding:4px 10px;background:var(--crimson);color:#fff;border:0;border-radius:4px;font-weight:bold;">閉じる ✕</button>
+    <span style="font-size:13px;color:var(--gold);font-weight:bold;">◆ 全画面表示 ◆</span>
+    <div class="modal-zoom-controls">
+      <button id="modalZoomOut">縮小 −</button>
+      <button id="modalZoomReset">100%</button>
+      <button id="modalZoomIn">拡大 ＋</button>
+      <button id="closeModal" style="background:var(--crimson);color:#fff;border:0;font-weight:bold;margin-left:6px;">閉じる ✕</button>
+    </div>
   </div>
   <div class="modal-body" id="modalBody">
     <div class="tree" id="modalTree"></div>
@@ -202,6 +214,7 @@ let root = JSON.parse(JSON.stringify(defaultRoot));
 let selected = 1;
 let nextId = 7;
 let zoom = 1;
+let modalZoom = 1;
 
 function initStorage(){
   try{
@@ -396,32 +409,36 @@ function render(n, isRoot=false){
   return branch;
 }
 
+function applyZoom(){
+  $("tree").style.zoom = zoom;
+  $("zoomReset").textContent = Math.round(zoom * 100) + "%";
+  $("modalTree").style.zoom = modalZoom;
+  $("modalZoomReset").textContent = Math.round(modalZoom * 100) + "%";
+}
+
 function draw(){
-  const renderedTree = render(root, true);
-  const modalTree = renderedTree.cloneNode(true);
-
-  $("tree").replaceChildren(renderedTree);
-  $("modalTree").replaceChildren(modalTree);
-
-  // モーダル内のカードにもクリックイベントを再付与
-  attachModalEvents($("modalTree"), root);
+  $("tree").replaceChildren(render(root, true));
+  $("modalTree").replaceChildren(render(root, true));
+  applyZoom();
 
   $("count").textContent="総勢 "+flatten(root).length+" 名・団体";
   saveCurrentOrgData();
 }
 
-// モーダル内のツリーをタップしたときも選択・同期できるようにする再帰関数
-function attachModalEvents(container, nodeObj){
-  // 簡易的にDOM要素を走査してクリック時に対象IDを選択状態にする
-  const cards = container.querySelectorAll('.node');
-  // 厳密な紐付けの代わりに通常のdrawで再描画されるようにする
-}
+// 通常画面のズーム操作
+$("zoomIn").onclick=()=>{ zoom=Math.min(1.8, +(zoom+.1).toFixed(1)); applyZoom(); };
+$("zoomOut").onclick=()=>{ zoom=Math.max(.4, +(zoom-.1).toFixed(1)); applyZoom(); };
+$("zoomReset").onclick=()=>{ zoom=1; applyZoom(); };
+
+// 全画面モーダルのズーム操作
+$("modalZoomIn").onclick=()=>{ modalZoom=Math.min(2.0, +(modalZoom+.15).toFixed(2)); applyZoom(); };
+$("modalZoomOut").onclick=()=>{ modalZoom=Math.max(.3, +(modalZoom-.15).toFixed(2)); applyZoom(); };
+$("modalZoomReset").onclick=()=>{ modalZoom=1; applyZoom(); };
 
 // フルスクリーン開閉
 $("expandModal").onclick = () => { $("modalOverlay").classList.add("active"); };
 $("closeModal").onclick = () => { $("modalOverlay").classList.remove("active"); };
 $("mainCanvas").onclick = (e) => {
-  // 背景や余白をタップしたときに拡大したい場合はここで判定（カード以外）
   if(e.target === $("mainCanvas") || e.target.classList.contains('tree')){
     $("modalOverlay").classList.add("active");
   }
